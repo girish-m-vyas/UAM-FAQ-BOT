@@ -1,0 +1,9 @@
+node_modules/
+.env
+npm-debug.log*
+.DS_Store
+data/users.json
+
+# Runtime data - keep out of Git; Render persistent disk stores this
+data/users.json
+data/app-data.json

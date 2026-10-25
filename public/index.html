@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBL Bank · UAM Intelligence Hub</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --rbl:#8B1728;--rbl-d:#6B1020;--rbl-dd:#45091A;--rbl-l:#C0394E;
+  --accent:#E8B86D;--accent-l:#FDF3E3;
+  --bg:#F2F1EF;--surf:#FFFFFF;--surf2:#F8F7F5;
+  --bdr:#E3E1DC;--bdr2:#D0CEC9;
+  --txt:#1C1B19;--txt2:#6B6661;--txt3:#A09C97;
+  --green:#1A6B42;--green-bg:#E5F3EC;--green-bdr:#B3D9C4;
+  --red:#B91C2E;--red-bg:#FEE9EB;--red-bdr:#F5B8BC;
+  --blue:#1859A0;--blue-bg:#EBF2FB;--blue-bdr:#B3CEF0;
+  --amber:#996B0A;--amber-bg:#FEF4E0;--amber-bdr:#F0D898;
+  --purple:#5B3B9E;--purple-bg:#F0EBFB;
+  --sb:220px;--top:52px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);
+  --shadow-md:0 2px 4px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.06);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden;font-size:14px}
+body[data-theme='blue']{--rbl:#1859A0;--rbl-d:#12477F;--rbl-dd:#0D3158;--rbl-l:#3479BE;--accent:#78B7E8;--accent-l:#EAF5FD}
+body[data-theme='emerald']{--rbl:#176B55;--rbl-d:#105340;--rbl-dd:#0B3C30;--rbl-l:#2D8A70;--accent:#E0B35A;--accent-l:#FFF5DF}
+body[data-theme='dark']{--rbl:#A72A3E;--rbl-d:#861F31;--rbl-dd:#171719;--bg:#111214;--surf:#1A1B1E;--surf2:#222327;--bdr:#303238;--bdr2:#44464D;--txt:#F3F3F3;--txt2:#B9BBC1;--txt3:#858891}
+
+/* ── SIDEBAR ── */
+.sb{width:var(--sb);background:var(--rbl-dd);display:flex;flex-direction:column;height:100vh;flex-shrink:0}
+.sb-brand{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.sb-logo-mark{width:28px;height:28px;background:var(--rbl);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;letter-spacing:-.5px}
+.sb-name{font-size:13px;font-weight:600;color:#fff;letter-spacing:-.01em}
+.sb-sub{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+.sb-scroll{flex:1;overflow-y:auto;padding:10px 8px;scrollbar-width:none}
+.sb-section{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:12px 8px 5px}
+.sb-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border-radius:7px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.55);font-size:12.5px;font-family:'Inter',sans-serif;transition:all .15s;text-align:left;position:relative}
+.sb-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.sb-btn.active{background:var(--rbl);color:#fff;font-weight:500}
+.sb-btn .ico{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.sb-btn .lbl{flex:1}
+.sb-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:auto;flex-shrink:0}
+.sb-btn .count{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:10px;padding:1px 6px;border-radius:10px;margin-left:auto}
+.sb-btn.active .count{background:rgba(255,255,255,.2);color:#fff}
+.sb-footer{padding:10px 14px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:rgba(255,255,255,.25)}
+
+/* ── LAYOUT ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:var(--top);background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.tb-title{font-size:14px;font-weight:600;flex:1}
+.tb-meta{font-size:11px;color:var(--txt3)}
+.tb-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.pill-g{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr)}
+.pill-r{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)}
+.pill-b{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bdr)}
+.pill-a{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bdr)}
+.pill-p{background:var(--purple-bg);color:var(--purple)}
+
+.page{flex:1;overflow-y:auto;padding:20px;display:none}
+.page.on{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;box-shadow:var(--shadow)}
+.card-h{padding:13px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.card-ht{font-size:13px;font-weight:600}
+.card-b{padding:16px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--rbl);color:#fff}.btn-p:hover{background:var(--rbl-d)}.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-o{background:none;color:var(--rbl);border:1px solid var(--rbl)}.btn-o:hover{background:var(--rbl);color:#fff}
+.btn-g{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr)}.btn-g:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-ghost{background:none;color:var(--txt2);border:1px solid var(--bdr)}.btn-ghost:hover{border-color:var(--bdr2);color:var(--txt)}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)}.btn-danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* ── FORMS ── */
+.inp{padding:8px 11px;border:1px solid var(--bdr);border-radius:7px;font-family:'Inter',sans-serif;font-size:13px;outline:none;background:var(--surf);color:var(--txt);width:100%;transition:border .15s}
+.inp:focus{border-color:var(--rbl);box-shadow:0 0 0 3px rgba(139,23,40,.08)}
+.inp-sm{padding:6px 10px;font-size:12px}
+textarea.inp{resize:vertical;line-height:1.6}
+select.inp{cursor:pointer}
+.label{font-size:11px;font-weight:600;color:var(--txt2);letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:5px}
+.field{display:flex;flex-direction:column;gap:4px}
+.row{display:flex;gap:10px;align-items:flex-end}
+.hint{font-size:11px;color:var(--txt3);margin-top:4px;line-height:1.5}
+
+/* ── DROP ZONE ── */
+.dropzone{border:2px dashed var(--bdr2);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surf2)}
+.dropzone:hover,.dropzone.drag{border-color:var(--rbl);background:var(--red-bg)}
+.dropzone-icon{font-size:28px;margin-bottom:8px}
+.dropzone-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.dropzone-sub{font-size:11.5px;color:var(--txt3)}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{padding:9px 12px;background:var(--surf2);border-bottom:1px solid var(--bdr);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt2);text-align:left;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--bdr);color:var(--txt);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surf2)}
+
+/* ── STATS ── */
+.stat-grid{display:grid;gap:10px}
+.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:9px;padding:13px 15px}
+.stat-lbl{font-size:10.5px;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.stat-val{font-size:24px;font-weight:700;line-height:1.1;margin-top:3px}
+.stat-sub{font-size:11px;color:var(--txt3);margin-top:3px}
+
+/* ── CHAT ── */
+.chat-layout{display:grid;grid-template-columns:1fr 280px;gap:14px;height:calc(100vh - var(--top) - 40px)}
+.chat-frame{display:flex;flex-direction:column}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;gap:8px;max-width:88%}
+.msg.u{align-self:flex-end;flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.msg.b .av{background:var(--rbl);color:#fff}
+.msg.u .av{background:var(--accent);color:var(--rbl-dd)}
+.bubble{padding:9px 13px;border-radius:10px;font-size:13px;line-height:1.65}
+.msg.b .bubble{background:var(--surf);border:1px solid var(--bdr);border-radius:2px 10px 10px 10px;color:var(--txt)}
+.msg.u .bubble{background:var(--rbl);color:#fff;border-radius:10px 2px 10px 10px}
+.msg.b .bubble strong{color:var(--rbl)}
+.chat-qchips{padding:8px 14px;display:flex;flex-wrap:wrap;gap:5px;border-top:1px solid var(--bdr)}
+.qc{padding:5px 10px;border-radius:14px;font-size:11.5px;cursor:pointer;border:1px solid var(--bdr);background:var(--surf);color:var(--txt2);font-family:'Inter',sans-serif;transition:all .15s}
+.qc:hover{border-color:var(--rbl);color:var(--rbl);background:var(--red-bg)}
+.chat-inp-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--bdr)}
+.chat-inp{flex:1;padding:9px 13px;border:1px solid var(--bdr);border-radius:22px;font-family:'Inter',sans-serif;font-size:13px;outline:none;background:var(--surf2);color:var(--txt)}
+.chat-inp:focus{border-color:var(--rbl);background:var(--surf)}
+.btn-send{background:var(--rbl);color:#fff;border:none;padding:9px 16px;border-radius:22px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
+.btn-send:hover{background:var(--rbl-d)}
+.btn-send:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── TYPING ── */
+.typing{display:flex;gap:3px;align-items:center;padding:4px 0}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--rbl);animation:bop 1.1s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.18s}
+.typing span:nth-child(3){animation-delay:.36s}
+@keyframes bop{0%,80%,100%{transform:scale(.55);opacity:.35}40%{transform:scale(1);opacity:1}}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:40px 20px}
+.empty-ico{font-size:32px;margin-bottom:10px}
+.empty-t{font-size:14px;font-weight:600;margin-bottom:5px}
+.empty-s{font-size:12.5px;color:var(--txt3);line-height:1.5}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--bdr);gap:0;margin-bottom:16px}
+.tab{padding:9px 16px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--txt2);transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Inter',sans-serif}
+.tab.on{color:var(--rbl);border-bottom-color:var(--rbl);font-weight:600}
+.tab:hover:not(.on){color:var(--txt);border-bottom-color:var(--bdr2)}
+
+/* ── DATA MANAGER ── */
+.dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dm-card{border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
+.dm-hd{padding:12px 15px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bdr)}
+.dm-hd-ico{font-size:18px}
+.dm-hd-title{font-size:13px;font-weight:600;flex:1}
+.dm-status{font-size:11px}
+.dm-body{padding:14px 15px}
+.dm-meta{font-size:11.5px;color:var(--txt3);margin-bottom:10px;line-height:1.5}
+.dm-info{display:flex;gap:16px;margin-bottom:12px}
+.dm-info-item{text-align:center}
+.dm-info-num{font-size:20px;font-weight:700;color:var(--txt)}
+.dm-info-lbl{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em}
+.last-updated{font-size:11px;color:var(--txt3);font-style:italic}
+
+/* ── SOP LIST ── */
+.sop-item{background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.sop-item:hover{border-color:var(--rbl);background:var(--red-bg)}
+.sop-item.active{border-color:var(--rbl);background:var(--red-bg)}
+.sop-cat{font-size:10px;font-weight:600;color:var(--rbl);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.sop-name{font-size:13px;font-weight:600}
+.sop-preview{font-size:11.5px;color:var(--txt3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── BAR CHART ── */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-lbl{font-size:11.5px;color:var(--txt2);width:110px;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:7px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.bar-val{font-size:11px;font-weight:600;width:36px;flex-shrink:0}
+
+/* ── AUDIT ── */
+.audit-q-item{padding:11px 13px;border-radius:8px;cursor:pointer;border:1px solid var(--bdr);background:var(--surf);transition:all .15s;margin-bottom:6px}
+.audit-q-item:hover{border-color:var(--rbl)}
+.audit-q-item.active{border-color:var(--rbl);background:var(--red-bg)}
+.aq-cat{font-size:10px;font-weight:600;color:var(--rbl);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.aq-text{font-size:12px;color:var(--txt);line-height:1.4}
+
+/* ── HANDOVER ── */
+.step-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.step-item.active{border-color:var(--rbl);background:var(--red-bg)}
+.step-item:hover:not(.active){background:var(--surf2)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--rbl);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-item.done .step-num{background:var(--green)}
+.step-nm{font-size:12.5px;font-weight:500}
+.step-ow{font-size:11px;color:var(--txt3)}
+.check-item{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:var(--surf2);border-radius:7px;font-size:12.5px;line-height:1.5}
+.chkbox{width:15px;height:15px;border-radius:4px;border:2px solid var(--bdr2);flex-shrink:0;cursor:pointer;margin-top:1px;position:relative;transition:all .15s}
+.chkbox.on{background:var(--green);border-color:var(--green)}
+.chkbox.on::after{content:'✓';color:#fff;font-size:10px;position:absolute;top:-1px;left:1.5px}
+
+/* ── MISC ── */
+.divider{height:1px;background:var(--bdr);margin:12px 0}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:600}
+.badge-g{background:var(--green-bg);color:var(--green)}
+.badge-r{background:var(--red-bg);color:var(--red)}
+.badge-a{background:var(--amber-bg);color:var(--amber)}
+.badge-b{background:var(--blue-bg);color:var(--blue)}
+.badge-p{background:var(--purple-bg);color:var(--purple)}
+pre,code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--surf2);border-radius:5px;padding:2px 5px;color:var(--txt)}
+.alert{padding:10px 13px;border-radius:7px;font-size:12.5px;line-height:1.55;margin-bottom:12px}
+.alert-b{background:var(--blue-bg);border:1px solid var(--blue-bdr);color:var(--blue)}
+.alert-a{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber)}
+.alert-g{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green)}
+.alert-r{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red)}
+.scroll-x{overflow-x:auto}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.four-col{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;background:#1C1B19;color:#fff;padding:10px 16px;border-radius:8px;font-size:12.5px;font-weight:500;z-index:9999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{position:fixed;inset:0;z-index:10000;background:linear-gradient(135deg,#45091A 0%,#8B1728 50%,#6B1020 100%);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif}
+.login-box{background:#fff;border-radius:16px;width:min(400px,95vw);box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden}
+.login-header{background:#45091A;padding:28px 32px 24px;text-align:center}
+.login-logo-mark{width:48px;height:48px;background:#8B1728;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;margin:0 auto 12px;letter-spacing:-.5px}
+.login-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
+.login-sub{font-size:12px;color:rgba(255,255,255,.45);letter-spacing:.04em;text-transform:uppercase}
+.login-body{padding:28px 32px}
+.login-field{margin-bottom:16px}
+.login-label{font-size:11px;font-weight:600;color:#6B6661;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px}
+.login-inp{width:100%;padding:10px 14px;border:1.5px solid #E3E1DC;border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;outline:none;color:#1C1B19;transition:border .15s;box-sizing:border-box}
+.login-inp:focus{border-color:#8B1728;box-shadow:0 0 0 3px rgba(139,23,40,.1)}
+.login-btn{width:100%;padding:11px;background:#8B1728;color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}
+.login-btn:hover{background:#6B1020}
+.login-err{background:#FEE9EB;border:1px solid #F5B8BC;color:#B91C2E;border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:14px;display:none}
+.login-err.show{display:block}
+.login-footer{text-align:center;padding:0 32px 24px;font-size:11px;color:#A09C97}
+.role-admin-badge{background:#FEE9EB;color:#B91C2E;border:1px solid #F5B8BC;display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.role-viewer-badge{background:#EBF2FB;color:#1859A0;border:1px solid #B3CEF0;display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.user-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;margin-bottom:8px;background:var(--surf)}
+.user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.user-info{flex:1}
+.user-nm{font-size:13px;font-weight:600}
+.user-meta{font-size:11px;color:var(--txt3)}
+.admin-only{display:none}
+.admin-only-btn{display:none!important}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;display:none}
+.overlay.show{display:flex}
+.modal{background:var(--surf);border-radius:12px;width:min(600px,95vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-md)}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.modal-t{font-size:15px;font-weight:600}
+.modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:var(--txt2);padding:2px 6px;border-radius:4px}
+.modal-x:hover{background:var(--surf2)}
+.modal-b{padding:20px;overflow-y:auto;flex:1}
+.modal-f{padding:14px 20px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end}
+@media(max-width:1050px){.four-col{grid-template-columns:repeat(2,1fr)}}
+
+/* v8 UX */
+.compact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.audit-layout{display:grid;grid-template-columns:minmax(300px,38%) 1fr;gap:14px;height:calc(100vh - var(--top) - 40px)}.evidence-item{padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;background:var(--surf2);margin-top:7px}.jml-table{table-layout:auto}.jml-table th,.jml-table td{white-space:nowrap}.mu-dashboard{display:grid;grid-template-columns:minmax(420px,.9fr) minmax(500px,1.1fr);gap:14px;align-items:start}.mu-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.mu-form-grid .span2{grid-column:span 2}.mu-form-grid .span3{grid-column:1/-1}.mu-list-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mu-list-grid .user-row{margin:0;height:100%}@media(max-width:1150px){.mu-dashboard{grid-template-columns:1fr}.mu-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mu-list-grid{grid-template-columns:1fr}.audit-layout{grid-template-columns:1fr;height:auto}}
+
+/* ── JML Data Manager preview ── */
+.jml-dm-grid{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:14px;align-items:start}
+.jml-dm-grid .card-h{flex-wrap:wrap;gap:6px}
+.jml-dm-grid .card-ht{white-space:normal}
+.jml-dm-preview{min-width:0;overflow:hidden}
+.jml-dm-scroll{overflow:auto;max-height:calc(100vh - 300px);min-height:120px}
+.jml-dm-table{font-size:11.5px;width:100%}
+.jml-dm-table th{position:sticky;top:0;z-index:1;padding:8px 10px}
+.jml-dm-table td{padding:7px 10px;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1050px){.jml-dm-grid{grid-template-columns:1fr}}
+
+/* ── v13 full-width User Management UX ── */
+/* v13.1 refinements: compact clickable KPIs, sortable headers, tighter rows */
+.mu-v13-kpis{gap:10px!important}
+.mu-v13-kpis .stat{padding:8px 14px;display:flex;flex-direction:column;justify-content:center;min-height:0;transition:border-color .15s,box-shadow .15s}
+.mu-v13-kpis .stat-val{font-size:20px;line-height:1.2}
+.mu-v13-kpis .stat-sub{margin-top:1px}
+.mu-v13-kpis .stat.clickable{cursor:pointer}
+.mu-v13-kpis .stat.clickable:hover{border-color:var(--rbl);box-shadow:0 2px 8px rgba(139,23,40,.12)}
+.mu-v13-kpis .stat.on{border-color:var(--rbl);box-shadow:inset 0 0 0 1px var(--rbl)}
+.mu-v13-table-wrap{max-height:calc(100vh - 292px);min-height:240px}
+.mu-v13-table th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.mu-v13-table th.sortable:hover{color:var(--rbl)}
+.mu-v13-table th .arr{display:inline-block;width:10px;margin-left:3px;opacity:.7}
+.mu-v13-table td{padding:7px 10px}
+.mu-v13-table td:nth-child(6) .badge{white-space:nowrap}
+.mu-v13-main .mu-v13-filters{grid-template-columns:minmax(240px,2fr) minmax(110px,.7fr) minmax(140px,.9fr) minmax(150px,.9fr) auto auto}.mu-v13-filters .mu-v13-result{min-width:64px}
+.mu-v13-reset{white-space:nowrap}
+@media(max-width:1050px){.mu-v13-main .mu-v13-filters{grid-template-columns:2fr 1fr 1fr}}
+
+#page-usersmgmt{padding:14px 18px 18px!important;overflow:auto!important}
+.mu-v13-shell{width:100%;max-width:none;margin:0}
+.mu-v13-kpis{margin-bottom:12px!important;grid-template-columns:repeat(4,minmax(150px,1fr))!important}
+.mu-v13-main{width:100%;min-width:0;overflow:hidden}
+.mu-v13-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px;border-bottom:1px solid var(--bdr)}
+.mu-v13-actions{display:flex;gap:8px;flex-shrink:0}
+.mu-v13-filters{display:grid;grid-template-columns:minmax(260px,2fr) minmax(120px,.7fr) minmax(150px,.9fr) minmax(150px,.9fr) auto;gap:8px;padding:10px 15px;background:var(--surf2);border-bottom:1px solid var(--bdr);align-items:center}
+.mu-v13-result{text-align:right;white-space:nowrap}
+.mu-v13-table-wrap{width:100%;overflow:auto;max-height:calc(100vh - 310px);min-height:280px}
+.mu-v13-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.5px}
+.mu-v13-table th{position:sticky;top:0;z-index:2;background:var(--surf);color:var(--txt2);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:9px 10px;border-bottom:1px solid var(--bdr)}
+.mu-v13-table td{padding:9px 10px;border-bottom:1px solid var(--bdr);vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
+.mu-v13-table tbody tr:hover{background:var(--surf2)}
+.mu-v13-table th:nth-child(1){width:22%}.mu-v13-table th:nth-child(2){width:9%}.mu-v13-table th:nth-child(3){width:12%}.mu-v13-table th:nth-child(4){width:15%}.mu-v13-table th:nth-child(5){width:12%}.mu-v13-table th:nth-child(6){width:10%}.mu-v13-table th:nth-child(7){width:9%}.mu-v13-table th:nth-child(8){width:11%}
+.mu-v13-employee{display:flex;gap:9px;align-items:center;min-width:0}.mu-v13-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--blue-bg);color:var(--blue);font-weight:700;flex:0 0 30px}.mu-v13-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mu-v13-sub{font-size:10px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.mu-v13-actions-cell{display:flex;gap:5px;white-space:nowrap}.mu-v13-actions-cell .btn{padding:5px 7px;font-size:10px}
+.mu-v13-footer{display:flex;justify-content:space-between;gap:12px;padding:9px 15px;font-size:10px;color:var(--txt3);border-top:1px solid var(--bdr);background:var(--surf2)}
+.mu-v13-overlay{display:none;position:fixed;inset:0;z-index:10020;background:rgba(20,20,20,.42);backdrop-filter:blur(2px);align-items:stretch;justify-content:flex-end}
+.mu-v13-overlay.open{display:flex}
+.mu-v13-drawer{width:min(620px,96vw);height:100%;background:var(--surf);box-shadow:-12px 0 36px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.mu-v13-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--bdr)}
+.mu-v13-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px;overflow:auto}.mu-v13-form .span2{grid-column:1/-1}
+.mu-v13-drawer-actions{margin-top:auto;display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--bdr);background:var(--surf2)}
+.mu-v13-bulk-card{width:min(560px,94vw);margin:auto;background:var(--surf);border-radius:12px;box-shadow:0 18px 55px rgba(0,0,0,.24);overflow:hidden;align-self:center}
+@media(max-width:1050px){.mu-v13-filters{grid-template-columns:2fr 1fr 1fr}.mu-v13-filters #mu-dept-filter{grid-column:1/3}.mu-v13-result{grid-column:3}.mu-v13-table{min-width:900px}}
+@media(max-width:700px){.mu-v13-main .mu-v13-filters{grid-template-columns:1fr 1fr}#page-usersmgmt{padding:10px!important}.mu-v13-kpis{grid-template-columns:1fr 1fr!important}.mu-v13-toolbar{align-items:flex-start;flex-direction:column}.mu-v13-actions{width:100%}.mu-v13-actions .btn{flex:1}.mu-v13-filters{grid-template-columns:1fr 1fr}.mu-v13-filters #mu-search{grid-column:1/-1}.mu-v13-filters #mu-dept-filter{grid-column:auto}.mu-v13-result{grid-column:1/-1;text-align:left}.mu-v13-form{grid-template-columns:1fr}.mu-v13-form .span2{grid-column:auto}.mu-v13-footer{flex-direction:column}.mu-v13-table-wrap{max-height:none}}
+
+</style>
+</head>
+<body>
+
+<!-- ══ ADMIN LOGIN MODAL ══ -->
+<div id="admin-login-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;font-family:Inter,sans-serif">
+  <div style="background:#fff;border-radius:16px;width:min(380px,95vw);box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden">
+    <div style="background:#45091A;padding:24px 28px 20px;text-align:center">
+      <div style="width:40px;height:40px;background:#8B1728;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;margin:0 auto 10px">🔐</div>
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Sign In</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.04em;text-transform:uppercase">RBL Bank · UAM Hub</div>
+    </div>
+    <div style="padding:24px 28px">
+      <div id="login-err" style="display:none;background:#FEE9EB;border:1px solid #F5B8BC;color:#B91C2E;border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:14px"></div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Username</label>
+        <input class="login-inp" id="login-user" type="text" placeholder="Username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="login-label">Password</label>
+        <input class="login-inp" id="login-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="login-btn" onclick="doLogin()">Sign In →</button>
+      <button onclick="closeAdminModal()" style="width:100%;margin-top:8px;padding:9px;background:none;border:1px solid #E3E1DC;border-radius:8px;font-family:Inter,sans-serif;font-size:13px;cursor:pointer;color:#6B6661">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- API key is stored securely on the server -->
+
+<!-- ─── TOAST ─── -->
+<div id="toast"></div>
+
+<!-- ─── ADD SOP MODAL ─── -->
+<div class="overlay" id="sop-modal">
+  <div class="modal">
+    <div class="modal-h">
+      <div class="modal-t" id="sop-modal-title">Add SOP Document</div>
+      <button class="modal-x" onclick="closeModal('sop-modal')">✕</button>
+    </div>
+    <div class="modal-b">
+      <div class="alert alert-b" style="margin-bottom:14px">💡 Paste your SOP content directly. The AI will use this exact text when answering questions. You can add as many SOPs as needed.</div>
+      <div class="field" style="margin-bottom:10px">
+        <label class="label">SOP Name *</label>
+        <input class="inp" id="sop-name-inp" placeholder="e.g. User Offboarding SOP v2.1">
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <div class="field" style="flex:1">
+          <label class="label">Category</label>
+          <select class="inp" id="sop-cat-inp">
+            <option>Access Lifecycle</option><option>Privileged Access</option><option>Governance</option>
+            <option>Compliance</option><option>Incident</option><option>Third Party</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label class="label">Version</label>
+          <input class="inp" id="sop-ver-inp" placeholder="e.g. v2.1">
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">SOP Content <span style="font-weight:400;text-transform:none">(required only when no attachment)</span></label>
+        <textarea class="inp" id="sop-content-inp" rows="12" placeholder="Paste the full SOP content here. Include all steps, roles, SLAs, and guidelines. The more detail, the better the AI can answer queries about this SOP."></textarea>
+        <div class="field" style="margin-top:10px"><label class="label">Attachment (optional)</label><input class="inp" id="sop-attachment-inp" type="file" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.xlsx,.xls"><div class="hint">Attach one supporting file (max 2 MB). The attachment can be downloaded from the SOP view. Text-based attachments are also added to AI context.</div></div>
+        <div class="hint">Tip: Paste the SOP content for best AI results; attachments are kept with the SOP record.</div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeModal('sop-modal')">Cancel</button>
+      <button class="btn btn-p" onclick="saveSOP()">Save SOP</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MONTHLY DATA MODAL ─── -->
+<div class="overlay" id="monthly-modal">
+  <div class="modal">
+    <div class="modal-h">
+      <div class="modal-t">Add / Update Monthly Data</div>
+      <button class="modal-x" onclick="closeModal('monthly-modal')">✕</button>
+    </div>
+    <div class="modal-b">
+      <div class="alert alert-b" style="margin-bottom:14px">Enter your monthly request statistics. This data powers the dashboard. You can update any month at any time.</div>
+      <div class="row" style="margin-bottom:10px">
+        <div class="field" style="flex:1">
+          <label class="label">Month</label>
+          <select class="inp" id="m-month">
+            <option>January</option><option>February</option><option>March</option><option>April</option>
+            <option>May</option><option>June</option><option>July</option><option>August</option>
+            <option>September</option><option>October</option><option>November</option><option>December</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label class="label">Year</label>
+          <input class="inp" id="m-year" type="number" value="2026" min="2020" max="2030">
+        </div>
+      </div>
+      <div class="four-col" style="margin-bottom:14px">
+        <div class="field"><label class="label">Created</label><input class="inp" id="m-created" type="number" placeholder="0"></div>
+        <div class="field"><label class="label">Closed</label><input class="inp" id="m-closed" type="number" placeholder="0"></div>
+        <div class="field"><label class="label">Pending</label><input class="inp" id="m-pending" type="number" placeholder="0"></div>
+        <div class="field"><label class="label">SLA Breached</label><input class="inp" id="m-sla" type="number" placeholder="0"></div>
+      </div>
+      <div class="divider"></div>
+      <p style="font-size:12px;color:var(--txt2);margin-bottom:10px;font-weight:500">Category breakdown (optional — comma-separated: Name:Count)</p>
+      <div class="field" style="margin-bottom:10px">
+        <textarea class="inp" id="m-cats" rows="3" placeholder="Access Grant:145, Access Revoke:89, Role Change:44, Recertification:22, Password Reset:12"></textarea>
+        <div class="hint">Format: CategoryName:Count, CategoryName:Count, …</div>
+      </div>
+      <div class="field">
+        <label class="label">Application-wise closure % (optional)</label>
+        <textarea class="inp" id="m-apps" rows="3" placeholder="Finacle:94, Active Directory:98, Salesforce:88, Temenos:91, ServiceNow:96"></textarea>
+        <div class="hint">Format: AppName:ClosurePercent, AppName:ClosurePercent, …</div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeModal('monthly-modal')">Cancel</button>
+      <button class="btn btn-p" onclick="saveMonthlyEntry()">Save Month Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SIDEBAR ─── -->
+<aside class="sb">
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">RBL</div>
+      <div>
+        <div class="sb-name">UAM Hub</div>
+        <div class="sb-sub">Intelligence Bot</div>
+      </div>
+    </div>
+  </div>
+  <div class="sb-scroll">
+    <div class="sb-section">Assistant</div>
+    <button class="sb-btn active" id="nav-chat" onclick="go('chat')"><span class="ico">💬</span><span class="lbl">FAQ Chatbot</span></button>
+    <button class="sb-btn" id="nav-sop" onclick="go('sop')"><span class="ico">📋</span><span class="lbl">SOP Guidelines</span><span class="count" id="sop-nav-count">0</span></button>
+    <button class="sb-btn audit-access" id="nav-audit" onclick="go('audit')" style="display:none"><span class="ico">🔍</span><span class="lbl">Audit Q&A</span></button>
+
+    <div class="sb-section">Reference</div>
+    <button class="sb-btn" id="nav-acm" onclick="go('acm')"><span class="ico">🔗</span><span class="lbl">ACM Applications</span><span class="count" id="acm-nav-count">0</span></button>
+    <button class="sb-btn app-team-access" id="nav-handover" onclick="go('handover')" style="display:none"><span class="ico">🔄</span><span class="lbl">App Handover</span></button>
+
+    <div class="sb-section admin-only" id="sb-ops-section" style="display:none">Operations</div>
+    <button class="sb-btn admin-only" id="nav-users" onclick="go('users')" style="display:none"><span class="ico">👥</span><span class="lbl">Joiner / Mover / Leaver</span><span class="count" id="users-nav-count">0</span></button>
+    <button class="sb-btn admin-only" id="nav-dashboard" onclick="go('dashboard')" style="display:none"><span class="ico">📊</span><span class="lbl">Monthly Dashboard</span><span class="count" id="dash-nav-count">0</span></button>
+
+    <div class="sb-section admin-only" id="sb-admin-section" style="display:none">Admin</div>
+    <button class="sb-btn app-team-access" id="nav-data" onclick="go('data')" style="display:none"><span class="ico">⚙️</span><span class="lbl">Data Manager</span><span class="dot" id="dm-dot" style="display:none"></span></button>
+    <button class="sb-btn admin-only" id="nav-users-mgmt" onclick="go('usersmgmt')" style="display:none"><span class="ico">👤</span><span class="lbl">User Management</span></button>
+  </div>
+  <div style="padding:10px 10px 6px;border-top:1px solid rgba(255,255,255,.07)">
+    <button id="admin-login-btn" onclick="openAdminModal()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);font-size:11.5px;font-family:Inter,sans-serif;cursor:pointer;transition:all .15s">
+      <span>🔐</span><span>Admin Login</span>
+    </button>
+    <button id="admin-logout-btn" onclick="doLogout()" style="display:none;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:7px;background:rgba(139,23,40,.3);border:1px solid rgba(192,57,78,.3);color:rgba(255,255,255,.7);font-size:11.5px;font-family:Inter,sans-serif;cursor:pointer;transition:all .15s">
+      <span>🚪</span><span id="sb-logout-label">Sign Out</span>
+    </button>
+  </div>
+  <div class="sb-footer" id="sb-footer-user">RBL Bank · IAM Team · v22.0</div>
+</aside>
+
+<!-- ─── MAIN ─── -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="tb-title" id="pg-title">FAQ Chatbot</div>
+      <div class="tb-meta" id="pg-meta">AI-powered · answers from your uploaded SOPs, ACM &amp; data</div>
+    </div>
+    <div class="tb-right">
+      <select id="theme-select" class="inp inp-sm" aria-label="Color theme" onchange="setTheme(this.value)" style="width:112px"><option value="rbl">Light</option><option value="blue">Blue</option><option value="emerald">Emerald</option><option value="dark">Dark</option></select>
+      <span class="pill pill-g">● Live</span>
+      <span class="pill pill-b" id="data-status-pill" style="display:none">No data loaded</span>
+      <span id="session-role-badge" style="display:none"></span>
+      <span id="session-username" style="font-size:12px;color:var(--txt2);font-weight:500"></span>
+    </div>
+  </div>
+
+  <!-- ══ CHAT ══ -->
+  <div class="page on" id="page-chat">
+    <div class="chat-layout">
+      <div class="card chat-frame">
+        <div class="chat-msgs" id="chat-msgs">
+          <div class="msg b">
+            <div class="av">U</div>
+            <div class="bubble">
+              👋 Hello! I'm your <strong>UAM Assistant</strong> for RBL Bank.<br><br>
+              I answer from your actual uploaded data — SOPs, ACM, Joiner/Leaver records, and monthly stats. Go to <strong>⚙️ Data Manager</strong> to load your files first.<br><br>
+              What would you like to know?
+            </div>
+          </div>
+        </div>
+        <div class="chat-qchips" id="qchips">
+          <button class="qc" onclick="qsend(this)">What is the access revocation SLA?</button>
+          <button class="qc" onclick="qsend(this)">Explain the offboarding process</button>
+          <button class="qc" onclick="qsend(this)">Which apps does UAM manage?</button>
+          <button class="qc" onclick="qsend(this)">How many requests were closed this month?</button>
+          <button class="qc" onclick="qsend(this)">Emergency access procedure</button>
+        </div>
+        <div class="chat-inp-row">
+          <input class="chat-inp" id="chat-inp" placeholder="Ask about UAM, SOPs, users, dashboard…" onkeydown="if(event.key==='Enter')doChat()">
+          <button class="btn btn-ghost btn-sm" onclick="clearChat()" title="Clear chat">Clear</button><button class="btn-send" id="chat-send" onclick="doChat()">Send ↑</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+        <div class="card">
+          <div class="card-h"><div class="card-ht">📌 Quick Reference</div></div>
+          <div class="card-b" style="font-size:12px;color:var(--txt2);display:flex;flex-direction:column;gap:8px;line-height:1.6">
+            <div><strong style="color:var(--txt)">Access Request SLA</strong><br>Standard: 2 business days<br>Privileged: 4 hours (approved)<br>Emergency: Same day</div>
+            <div class="divider"></div>
+            <div><strong style="color:var(--txt)">Revocation SLA</strong><br>Resignation/Termination: 4 hrs<br>Role Change: 24 hours<br>Contractor End: Same day</div>
+            <div class="divider"></div>
+            <div><strong style="color:var(--txt)">UAM Helpdesk</strong><br>📞 Ext: 4001<br>📧 bank.uam@rblbank.com<br>🕐 Mon–Fri, 9 AM–6 PM<div class="divider"></div><strong style="color:var(--txt)">Escalation Matrix</strong><br>L1: BankUAM<br>L2: Girish / Manali<br>L3: Joel B</div>
+          </div>
+        </div>
+        <div class="card" id="data-summary-card">
+          <div class="card-h"><div class="card-ht">🗃️ Loaded Data</div></div>
+          <div class="card-b" id="data-summary-body">
+            <div style="font-size:12px;color:var(--txt3)">No data loaded yet. Visit ⚙️ Data Manager to upload your files.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SOP ══ -->
+  <div class="page" id="page-sop">
+    <div id="sop-empty" style="display:none">
+      <div class="empty"><div class="empty-ico">📋</div><div class="empty-t">No SOPs uploaded yet</div><div class="empty-s">Go to ⚙️ Data Manager → SOP Documents to add your SOPs.</div><br><button class="btn btn-p app-team-access" style="display:none" onclick="go('data')">Go to Data Manager</button></div>
+    </div>
+    <div id="sop-content-area">
+      <div class="row" style="margin-bottom:14px">
+        <input class="inp" id="sop-search" placeholder="Search SOPs by name or keyword…" oninput="filterSOPs()">
+        <button class="btn btn-p app-team-access" style="display:none" onclick="openModal('sop-modal')">+ Add SOP</button>
+      </div>
+      <div class="two-col" style="height:calc(100vh - var(--top) - 100px)">
+        <div style="overflow-y:auto;padding-right:6px">
+          <div id="sop-list"></div>
+        </div>
+        <div class="card" id="sop-detail-panel" style="overflow-y:auto">
+          <div class="empty" style="padding-top:60px"><div class="empty-ico">👆</div><div class="empty-t">Select a SOP</div><div class="empty-s">Click any SOP on the left to view its content and ask the AI for guidelines.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ACM ══ -->
+  <div class="page" id="page-acm">
+    <div id="acm-empty" style="display:none">
+      <div class="empty"><div class="empty-ico">🔗</div><div class="empty-t">No ACM data uploaded</div><div class="empty-s">Go to ⚙️ Data Manager → ACM Applications and upload your ACM CSV file.</div><br><button class="btn btn-p" onclick="go('data')">Go to Data Manager</button></div>
+    </div>
+    <div id="acm-content-area">
+      <div class="row" style="margin-bottom:14px;flex-wrap:wrap">
+        <input class="inp" style="max-width:280px" id="acm-search" placeholder="Search applications…" oninput="renderACMTable()">
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <span class="last-updated" id="acm-updated"></span><button class="btn btn-ghost btn-sm" id="acm-dedupe-btn" style="display:none" onclick="removeACMDuplicates()">🧹 Remove Duplicates</button>
+          <button class="btn btn-ghost btn-sm" onclick="go('data')">⟳ Update Data</button>
+        </div>
+      </div>
+      <div class="card scroll-x">
+        <table id="acm-table"><thead id="acm-thead"></thead><tbody id="acm-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ USERS ══ -->
+  <div class="page" id="page-users">
+    <div id="users-empty" style="display:none">
+      <div class="empty"><div class="empty-ico">👥</div><div class="empty-t">No Joiner/Leaver data uploaded</div><div class="empty-s">Go to ⚙️ Data Manager → Joiner / Mover / Leaver and upload your CSV file.</div><br><button class="btn btn-p" onclick="go('data')">Go to Data Manager</button></div>
+    </div>
+    <div id="users-content-area">
+      <div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <input class="inp inp-sm" style="max-width:200px" id="u-search" placeholder="Search name / emp ID…" oninput="renderUsersTable()">
+        <select class="inp inp-sm" style="width:auto" id="u-type" onchange="renderUsersTable()"><option value="">All Types</option><option>Joiner</option><option>Mover</option><option>Leaver</option></select>
+        <div class="field" style="flex-direction:row;align-items:center;gap:5px">
+          <label class="label" style="margin:0;white-space:nowrap">From</label>
+          <input class="inp inp-sm" type="date" id="u-from" style="width:140px">
+        </div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:5px">
+          <label class="label" style="margin:0;white-space:nowrap">To</label>
+          <input class="inp inp-sm" type="date" id="u-to" style="width:140px">
+        </div>
+        <button class="btn btn-p btn-sm" onclick="renderUsersTable()">Apply</button>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <span class="last-updated" id="users-updated"></span>
+          <button class="btn btn-ghost btn-sm" id="jml-dedupe-btn" style="display:none" onclick="removeJMLDuplicates()" title="Remove records that repeat the same employee, event, date, department, designation, grade and manager">🧹 Remove Duplicates</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportUsersCSV()">⬇ Export CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="go('data')">⟳ Update Data</button>
+        </div>
+      </div>
+      <div class="four-col" style="margin-bottom:14px" id="user-stats"></div>
+      <div class="card scroll-x">
+        <table id="users-table"><thead id="users-thead"></thead><tbody id="users-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page" id="page-dashboard">
+    <div id="dash-empty" style="display:none">
+      <div class="empty"><div class="empty-ico">📊</div><div class="empty-t">No monthly data yet</div><div class="empty-s">Go to ⚙️ Data Manager → Monthly Requests and add your monthly data.</div><br><button class="btn btn-p" onclick="go('data')">Go to Data Manager</button></div>
+    </div>
+    <div id="dash-content-area">
+      <div class="row" style="margin-bottom:14px">
+        <div class="field">
+          <label class="label">Select Month</label>
+          <select class="inp" id="dash-month-sel" onchange="renderDashboard()" style="width:220px"></select>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <span class="last-updated" id="dash-updated"></span>
+          <button class="btn btn-p btn-sm" onclick="openModal('monthly-modal')">+ Add Month Data</button>
+          <button class="btn btn-ghost btn-sm" onclick="go('data')">⟳ Update</button>
+        </div>
+      </div>
+      <div class="four-col" style="margin-bottom:14px" id="dash-stats"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-h"><div class="card-ht">Requests by Category</div></div>
+          <div class="card-b" id="dash-cats"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-ht">Closure % by Application</div></div>
+          <div class="card-b"><div id="dash-app-volume"></div><div class="divider"></div><div id="dash-apps"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HANDOVER ══ -->
+  <div class="page" id="page-handover">
+    <div class="row" style="margin-bottom:14px;align-items:flex-end;flex-wrap:wrap">
+      <div class="field" style="min-width:260px;flex:1"><label class="label">Application Name</label><input class="inp" id="ho-app-name" placeholder="e.g. Finacle, Salesforce, Treasury" onkeydown="if(event.key==='Enter')hoAddApplication()"></div>
+      <div class="field" style="min-width:180px"><label class="label">Application Owner</label><input class="inp" id="ho-app-owner" placeholder="Owner / team"></div>
+      <button class="btn btn-p" onclick="hoAddApplication()">+ Add Application</button>
+    </div>
+    <div class="two-col" style="grid-template-columns:320px 1fr;height:calc(100vh - var(--top) - 105px)">
+      <div class="card" style="padding:14px;overflow-y:auto">
+        <div class="row" style="margin-bottom:10px"><div class="label" style="margin:0">Applications (<span id="ho-app-count">0</span>)</div><input class="inp inp-sm" id="ho-search" style="margin-left:auto;max-width:150px" placeholder="Search..." oninput="renderHandover()"></div>
+        <div id="ho-app-list"></div>
+      </div>
+      <div id="ho-detail-panel" style="overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- ══ AUDIT ══ -->
+  <div class="page" id="page-audit">
+    <div class="audit-layout">
+      <div class="card" style="overflow-y:auto">
+        <div class="card-h"><div class="card-ht">🔍 Audit Workspace</div></div>
+        <div class="card-b">
+          <div class="label" style="margin-bottom:8px">Common Audit Queries</div><div id="audit-q-list"></div>
+          <div class="divider"></div>
+          <div class="label">Custom Query</div><textarea class="inp" id="custom-aq" rows="3" placeholder="Ask any audit question or search uploaded evidence…"></textarea>
+          <button class="btn btn-p" style="margin-top:8px;width:100%" onclick="runCustomAudit()">Generate Response ↗</button>
+          <div class="divider"></div>
+          <div class="row" style="align-items:center"><div><div class="label" style="margin:0">Audit Evidence Library</div><div class="hint">Upload evidence and make its metadata/text searchable in FAQ.</div></div><button class="btn btn-ghost btn-sm admin-only" style="margin-left:auto;display:none" onclick="document.getElementById('audit-evidence-file').click()">+ Upload Evidence</button></div>
+          <input type="file" id="audit-evidence-file" multiple style="display:none" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.xlsx,.xls,.png,.jpg,.jpeg" onchange="addAuditEvidence(this)">
+          <div id="audit-evidence-list"></div>
+        </div>
+      </div>
+      <div id="audit-resp-panel" style="overflow-y:auto"><div class="card" style="height:100%"><div class="empty" style="padding-top:80px"><div class="empty-ico">🔍</div><div class="empty-t">Audit response workspace</div><div class="empty-s">Select a query, ask a custom question, or upload evidence for searchable context.</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ DATA MANAGER ══ -->
+  <div class="page" id="page-data">
+    <div class="tabs" id="dm-tabs">
+      <button class="tab on" onclick="dmTab('sop-dm')">📋 SOP Documents</button>
+      <button class="tab" onclick="dmTab('acm-dm')">🔗 ACM Applications</button>
+      <button class="tab" onclick="dmTab('users-dm')">👥 Joiner / Mover / Leaver</button>
+      <button class="tab" onclick="dmTab('monthly-dm')">📊 Monthly Requests</button>
+    </div>
+
+    <!-- SOP Data Manager -->
+    <div id="sop-dm" class="dm-pane">
+      <div class="two-col">
+        <div>
+          <div class="alert alert-b">Upload your actual UAM SOP documents. Paste content from Word/PDF. Each SOP is stored individually and used by the AI chatbot and SOP search module.</div>
+          <div class="card" style="margin-top:12px">
+            <div class="card-h"><div class="card-ht">Add New SOP</div></div>
+            <div class="card-b" style="display:flex;flex-direction:column;gap:10px">
+              <div class="field"><label class="label">SOP Name *</label><input class="inp" id="dm-sop-name" placeholder="e.g. User Offboarding SOP v2.1"></div>
+              <div class="row">
+                <div class="field" style="flex:1"><label class="label">Category</label>
+                  <select class="inp" id="dm-sop-cat"><option>Access Lifecycle</option><option>Privileged Access</option><option>Governance</option><option>Compliance</option><option>Incident</option><option>Third Party</option><option>Other</option></select>
+                </div>
+                <div class="field" style="flex:1"><label class="label">Version</label><input class="inp" id="dm-sop-ver" placeholder="v2.1"></div>
+              </div>
+              <div class="field"><label class="label">SOP Content <span style="font-weight:400;text-transform:none">(required only when no attachment)</span></label><textarea class="inp" id="dm-sop-content" rows="8" placeholder="Paste the full SOP text here. Include all steps, roles, SLAs, escalation paths, and regulatory references.&#10;&#10;Example:&#10;1. OBJECTIVE&#10;This SOP defines the process for...&#10;&#10;2. SCOPE&#10;Applicable to all employees..."></textarea></div>
+              <div class="field"><label class="label">Attachment (optional)</label><input class="inp" id="dm-sop-attachment" type="file" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.xlsx,.xls"><div class="hint">Attach one supporting file (max 2 MB). Text files can be included in AI context.</div></div>
+              <button class="btn btn-p" onclick="saveDMSOP()">Save SOP Document</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">Uploaded SOPs (<span id="sop-dm-count">0</span>)</div>
+          <div id="sop-dm-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACM Data Manager -->
+    <div id="acm-dm" class="dm-pane" style="display:none">
+      <div class="two-col">
+        <div>
+          <div class="alert alert-b">Upload your ACM (Application Control Matrix) as a CSV file. The first row should be column headers. All columns will be shown in the ACM module. Columns containing URLs will automatically become clickable links.</div>
+          <div class="card" style="margin-top:12px">
+            <div class="card-h">
+              <div class="card-ht">Upload ACM CSV</div>
+              <div style="display:flex;align-items:center;gap:8px"><a class="btn btn-ghost btn-sm" href="samples/ACM_Applications_Sample.csv" download>⬇ Download Sample CSV</a><span class="last-updated" id="acm-dm-updated"></span></div>
+            </div>
+            <div class="card-b">
+              <div class="dropzone" id="acm-dropzone" onclick="document.getElementById('acm-file').click()" ondragover="dzOver(event,'acm-dropzone')" ondragleave="dzLeave('acm-dropzone')" ondrop="dzDrop(event,'acm')">
+                <div class="dropzone-icon">📂</div>
+                <div class="dropzone-title">Drop ACM CSV here or click to browse</div>
+                <div class="dropzone-sub">Supports .csv files. First row = column headers.</div>
+              </div>
+              <input type="file" id="acm-file" accept=".csv" style="display:none" onchange="fileSelected(this,'acm-selected')">
+              <div id="acm-selected" class="hint" style="margin-top:8px">No file selected.</div><button class="btn btn-p" style="margin-top:8px;width:100%" onclick="uploadSelectedCSV('acm')">Upload Selected ACM CSV</button><div style="margin:12px 0;text-align:center;font-size:12px;color:var(--txt3)">— or paste CSV content below —</div>
+              <textarea class="inp" id="acm-paste" rows="6" placeholder="Paste CSV content here (with headers in first row)&#10;&#10;Application Name,Owner,Category,Portal URL,ACM Document URL,SOP URL,Tags,Notes"></textarea>
+              <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="saveACMData()">Save ACM Data</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">Preview (<span id="acm-dm-count">0</span> applications)</div>
+          <div class="card scroll-x" style="max-height:500px;overflow-y:auto">
+            <table id="acm-dm-preview"><thead id="acm-dm-thead"></thead><tbody id="acm-dm-tbody"></tbody></table>
+          </div>
+          <div style="margin-top:10px">
+            <div class="alert alert-a" id="acm-dm-hint" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-g" style="margin-top:12px">
+        <strong>Expected columns (suggested):</strong> Application Name, Owner/Team, Category, Risk Level, Portal URL, ACM Document URL, SOP URL, Authentication Type, MFA Required, SCIM/API Provisioning, Notes. You can use any column names — the bot will use all of them.
+      </div>
+    </div>
+
+    <!-- Users Data Manager -->
+    <div id="users-dm" class="dm-pane" style="display:none">
+      <div class="jml-dm-grid">
+        <div>
+          <div class="alert alert-b">Upload Joiner, Mover &amp; Leaver data as a CSV file. The first row should be column headers. Include columns for Employee ID, Name, Type (Joiner/Mover/Leaver), Date, Department, Manager, Applications, Status, etc.</div>
+          <div class="card" style="margin-top:12px">
+            <div class="card-h">
+              <div class="card-ht">Upload Joiner / Mover / Leaver CSV</div>
+              <div style="display:flex;align-items:center;gap:8px"><a class="btn btn-ghost btn-sm" href="samples/JML_Users_Sample.csv" download>⬇ Download Sample CSV</a><span class="last-updated" id="users-dm-updated"></span></div>
+            </div>
+            <div class="card-b">
+              <div class="dropzone" id="users-dropzone" onclick="document.getElementById('users-file').click()" ondragover="dzOver(event,'users-dropzone')" ondragleave="dzLeave('users-dropzone')" ondrop="dzDrop(event,'users')">
+                <div class="dropzone-icon">📂</div>
+                <div class="dropzone-title">Drop CSV here or click to browse</div>
+                <div class="dropzone-sub">Supports .csv files. First row = column headers.</div>
+              </div>
+              <input type="file" id="users-file" accept=".csv" style="display:none" onchange="fileSelected(this,'users-selected')">
+              <div id="users-selected" class="hint" style="margin-top:8px">No file selected.</div><button class="btn btn-p" style="margin-top:8px;width:100%" onclick="uploadSelectedCSV('users')">Upload Selected JML CSV</button><div style="margin:12px 0;text-align:center;font-size:12px;color:var(--txt3)">— or paste CSV content below —</div>
+              <textarea class="inp" id="users-paste" rows="6" placeholder="Paste CSV content here&#10;&#10;Emp ID,Name,Department,Type,Date,Manager,Applications,Status&#10;RBL001,Amit Sharma,IT,Joiner,2026-03-01,Rajesh Kumar,Finacle|AD,Completed"></textarea>
+              <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="saveUsersData()">Save JML Data</button>
+            </div>
+          </div>
+        </div>
+        <div class="card jml-dm-preview">
+          <div class="card-h"><div class="card-ht">Preview</div><span class="hint" id="users-dm-countline"><span id="users-dm-count">0</span> records</span></div>
+          <div class="jml-dm-scroll">
+            <table class="jml-dm-table" id="users-dm-preview"><thead id="users-dm-thead"></thead><tbody id="users-dm-tbody"></tbody></table>
+            <div class="empty" id="users-dm-empty" style="display:none"><div class="empty-t">No JML records yet</div></div>
+          </div>
+          <div class="mu-v13-footer"><span id="users-dm-note">Showing the first 20 records. Duplicates are skipped automatically.</span></div>
+        </div>
+        <div id="users-dm-cols-hint" style="display:none"></div>
+      </div>
+      <div class="alert alert-g" style="margin-top:12px">
+        <strong>Key columns for filtering:</strong> A column named <code>Type</code> (with values Joiner/Mover/Leaver), <code>Date</code> (YYYY-MM-DD format), and any column with "Emp" in the name for Employee ID. Other columns will be displayed as-is.
+      </div>
+    </div>
+
+    <!-- Monthly Data Manager -->
+    <div id="monthly-dm" class="dm-pane" style="display:none">
+      <div class="two-col">
+        <div>
+          <div class="alert alert-b">Add monthly request statistics manually or upload a CSV. Each row = one month's data. This powers the Monthly Dashboard.</div>
+          <div class="card" style="margin-top:12px">
+            <div class="card-h"><div class="card-ht">Quick Add via Form</div></div>
+            <div class="card-b" style="display:flex;flex-direction:column;gap:10px">
+              <div class="row">
+                <div class="field" style="flex:1"><label class="label">Month</label><select class="inp" id="dm-m-month"><option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option></select></div>
+                <div class="field" style="flex:1"><label class="label">Year</label><input class="inp" id="dm-m-year" type="number" value="2026"></div>
+              </div>
+              <div class="four-col">
+                <div class="field"><label class="label">Created</label><input class="inp" id="dm-m-created" type="number" placeholder="0"></div>
+                <div class="field"><label class="label">Closed</label><input class="inp" id="dm-m-closed" type="number" placeholder="0"></div>
+                <div class="field"><label class="label">Pending</label><input class="inp" id="dm-m-pending" type="number" placeholder="0"></div>
+                <div class="field"><label class="label">SLA Breached</label><input class="inp" id="dm-m-sla" type="number" placeholder="0"></div>
+              </div>
+              <div class="field"><label class="label">Category breakdown (CategoryName:Count, …)</label><textarea class="inp" id="dm-m-cats" rows="2" placeholder="Access Grant:145, Access Revoke:89, Role Change:44"></textarea></div>
+              <div class="field"><label class="label">App created requests (AppName:Count, …)</label><textarea class="inp" id="dm-m-app-created" rows="2" placeholder="Finacle:120, Active Directory:80, Salesforce:45"></textarea></div><div class="field"><label class="label">App closed requests (AppName:Count, …)</label><textarea class="inp" id="dm-m-app-closed" rows="2" placeholder="Finacle:115, Active Directory:79, Salesforce:42"></textarea></div><div class="field"><label class="label">App closure % (AppName:Percent, …)</label><textarea class="inp" id="dm-m-apps" rows="2" placeholder="Finacle:95.8, Active Directory:98.8, Salesforce:93.3"></textarea></div>
+              <button class="btn btn-p" onclick="saveDMMonthly()">Add This Month</button>
+            </div>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <div class="card-h"><div class="card-ht">Or Upload CSV</div><a class="btn btn-ghost btn-sm" href="samples/Monthly_Requests_Sample.csv" download>⬇ Download Sample CSV</a></div>
+            <div class="card-b">
+              <div class="dropzone" onclick="document.getElementById('monthly-file').click()">
+                <div class="dropzone-icon">📂</div>
+                <div class="dropzone-title">Drop Monthly CSV here or click to browse</div>
+                <div class="dropzone-sub">Columns: Month, Year, Created, Closed, Pending, SLA Breached</div>
+              </div>
+              <input type="file" id="monthly-file" accept=".csv" style="display:none" onchange="fileSelected(this,'monthly-selected')"><div id="monthly-selected" class="hint" style="margin-top:8px">No file selected.</div><button class="btn btn-p" style="margin-top:8px;width:100%" onclick="uploadSelectedCSV('monthly')">Upload Selected Monthly CSV</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">Monthly Records (<span id="monthly-dm-count">0</span> months)</div>
+          <div id="monthly-dm-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ USER MANAGEMENT ══ -->
+  <div class="page" id="page-usersmgmt">
+    <div class="mu-v13-shell">
+      <div class="four-col mu-v13-kpis" id="mu-kpis"></div>
+      <div class="card mu-v13-main">
+        <div class="mu-v13-toolbar">
+          <div>
+            <div class="card-ht">👥 Employee Identity Directory</div>
+            <div class="hint">Search, filter and manage portal identities without changing browser zoom.</div>
+          </div>
+          <div class="mu-v13-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openBulkUserModal()">📥 Bulk Import</button>
+            <button class="btn btn-p btn-sm" onclick="openUserEditor()">＋ Add User</button>
+          </div>
+        </div>
+        <div class="mu-v13-filters">
+          <input class="inp inp-sm" id="mu-search" placeholder="🔍 Search name, emp code, email, username…" oninput="renderPortalUsers()">
+          <select class="inp inp-sm" id="mu-status-filter" onchange="renderPortalUsers()"><option value="">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+          <select class="inp inp-sm" id="mu-role-filter" onchange="renderPortalUsers()"><option value="">All Roles</option><option value="admin">Admin</option><option value="viewer">Viewer</option><option value="application">Application Team</option><option value="audit">Audit Team</option></select>
+          <select class="inp inp-sm" id="mu-dept-filter" onchange="renderPortalUsers()"><option value="">All Departments</option></select>
+          <button class="btn btn-ghost btn-sm mu-v13-reset" onclick="resetUserFilters()" title="Clear search and filters">↺ Reset</button>
+          <div class="hint mu-v13-result"><span id="mu-visible-count">0</span> shown</div>
+        </div>
+        <div class="mu-v13-table-wrap">
+          <table class="mu-v13-table">
+            <thead><tr id="mu-thead"><th class="sortable" data-k="name">Employee<span class="arr"></span></th><th class="sortable" data-k="empCode">Emp Code<span class="arr"></span></th><th class="sortable" data-k="department">Department<span class="arr"></span></th><th class="sortable" data-k="designation">Designation / Grade<span class="arr"></span></th><th class="sortable" data-k="manager">Manager<span class="arr"></span></th><th class="sortable" data-k="role">Role<span class="arr"></span></th><th class="sortable" data-k="status">Status<span class="arr"></span></th><th>Actions</th></tr></thead>
+            <tbody id="mu-list"></tbody>
+          </table>
+        </div>
+        <div class="mu-v13-footer">
+          <span>⚡ Lifecycle sync: Add → Joiner · Department change → Mover · Deactivate/Delete → Leaver</span>
+          <span>🔐 Admin-only identity administration</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+  <!-- USER EDITOR DRAWER -->
+  <div class="mu-v13-overlay" id="mu-editor-overlay" onclick="if(event.target===this)cancelEditPortalUser()">
+    <div class="mu-v13-drawer">
+      <div class="mu-v13-drawer-head"><div><div class="card-ht" id="mu-form-title">➕ Add User</div><div class="hint">Employee identity, lifecycle and portal access</div></div><button class="modal-x" onclick="cancelEditPortalUser()">✕</button></div>
+      <div class="mu-v13-form">
+        <input type="hidden" id="mu-edit-id">
+        <div class="field span2"><label class="label">Full Name *</label><input class="inp" id="mu-name" placeholder="e.g. Priya Sharma"></div>
+        <div class="field"><label class="label">Emp Code *</label><input class="inp" id="mu-empcode" placeholder="EMP1024"></div>
+        <div class="field"><label class="label">Joining Date</label><input class="inp" id="mu-joiningdate" type="date"></div>
+        <div class="field"><label class="label">Username *</label><input class="inp" id="mu-username" placeholder="priya.sharma"></div>
+        <div class="field"><label class="label">Password <span id="mu-pass-req">*</span></label><input class="inp" id="mu-password" type="password" placeholder="Min 8 characters"></div>
+        <div class="field span2"><label class="label">Email ID *</label><input class="inp" id="mu-email" type="email" placeholder="priya.sharma@admin.com"></div>
+        <div class="field"><label class="label">Department *</label><input class="inp" id="mu-dept" placeholder="IAM Team"></div>
+        <div class="field"><label class="label">Designation</label><input class="inp" id="mu-designation" placeholder="Assistant Manager"></div>
+        <div class="field"><label class="label">Grade</label><input class="inp" id="mu-grade" placeholder="M2"></div>
+        <div class="field"><label class="label">Manager</label><input class="inp" id="mu-manager" placeholder="Reporting Manager"></div>
+        <div class="field"><label class="label">Employee Status</label><select class="inp" id="mu-status"><option>Active</option><option>Inactive</option></select></div>
+        <div class="field"><label class="label">Portal Role *</label><select class="inp" id="mu-role"><option value="viewer">Viewer</option><option value="application">Application Team</option><option value="audit">Audit Team</option><option value="admin">Admin</option></select></div>
+      </div>
+      <div class="mu-v13-drawer-actions"><button class="btn btn-ghost" id="mu-cancel-btn" onclick="cancelEditPortalUser()">Cancel</button><button class="btn btn-p" id="mu-save-btn" onclick="savePortalUser()">Create User</button></div>
+    </div>
+  </div>
+
+  <!-- BULK USER MODAL -->
+  <div class="mu-v13-overlay" id="mu-bulk-overlay" onclick="if(event.target===this)closeBulkUserModal()">
+    <div class="mu-v13-bulk-card">
+      <div class="mu-v13-drawer-head"><div><div class="card-ht">📥 Bulk User Creation</div><div class="hint">Import employee identities using the current lifecycle template.</div></div><button class="modal-x" onclick="closeBulkUserModal()">✕</button></div>
+      <div class="card-b">
+        <div class="dropzone" onclick="document.getElementById('mu-bulk-file').click()"><div class="dropzone-icon">📄</div><div class="dropzone-title">Attach user CSV</div><div class="dropzone-sub">name, username, password, email, empCode, grade, designation, manager, joiningDate, status, role, department</div></div>
+        <input type="file" id="mu-bulk-file" accept=".csv,text/csv" style="display:none" onchange="bulkCreateUsers(this)">
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="downloadUserTemplate()">⬇ Download CSV Template</button>
+        <div id="mu-bulk-result" class="hint" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+
+// ════════════════════════════════════════════
+//  AUTH & ROLE-BASED ACCESS CONTROL
+// ════════════════════════════════════════════
+let SESSION = { loggedIn:false, role:'viewer', user:null };
+
+function openAdminModal(){
+  const m=document.getElementById('admin-login-modal'); m.style.display='flex';
+  document.getElementById('login-user').value=''; document.getElementById('login-pass').value=''; hideLoginErr();
+  setTimeout(()=>document.getElementById('login-user').focus(),50);
+}
+function closeAdminModal(){ document.getElementById('admin-login-modal').style.display='none'; }
+function showLoginErr(msg){ const e=document.getElementById('login-err'); e.textContent=msg; e.style.display='block'; }
+function hideLoginErr(){ document.getElementById('login-err').style.display='none'; }
+
+async function doLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value;
+  hideLoginErr(); if(!u||!p){ showLoginErr('Please enter username and password.'); return; }
+  const btn=document.querySelector('#admin-login-modal .login-btn'); btn.disabled=true; btn.textContent='Signing in…';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Sign in failed.');
+    SESSION={loggedIn:true,role:d.user.role,user:d.user}; closeAdminModal(); applyRole(d.user.role,d.user.name); toast('✅ Signed in as '+d.user.role.charAt(0).toUpperCase()+d.user.role.slice(1));
+  }catch(e){ showLoginErr(e.message); }
+  finally{ btn.disabled=false; btn.textContent='Sign In →'; }
+}
+async function doLogout(){
+  try{ await fetch('/api/logout',{method:'POST'}); }catch(e){}
+  SESSION={loggedIn:false,role:'viewer',user:null}; applyRole('viewer',''); go('chat'); toast('👋 Signed out');
+}
+async function restoreSession(){
+  try{ const r=await fetch('/api/session'); const d=await r.json(); if(d.authenticated&&d.user){ SESSION={loggedIn:true,role:d.user.role,user:d.user}; applyRole(d.user.role,d.user.name); return; } }catch(e){}
+  applyRole('viewer','');
+}
+function applyRole(role,name){
+  const isAdmin=role==='admin', isApp=role==='application', isAudit=role==='audit', loggedIn=!!SESSION.loggedIn;
+  document.querySelectorAll('.admin-only').forEach(el=>{if(!isAdmin){el.style.display='none';return;}const tag=el.tagName.toLowerCase();el.style.display=(tag==='button'||el.classList.contains('row'))?'flex':'block';});
+  document.querySelectorAll('.app-team-access').forEach(el=>{const ok=isAdmin||isApp;el.style.display=ok?'flex':'none';});
+  document.querySelectorAll('.audit-access').forEach(el=>{const ok=isAdmin||isAudit;el.style.display=ok?'flex':'none';});
+  const dataPill=document.getElementById('data-status-pill'); if(dataPill)dataPill.style.display=isAdmin?'inline-flex':'none';
+  document.getElementById('admin-login-btn').style.display=loggedIn?'none':'flex';document.getElementById('admin-logout-btn').style.display=loggedIn?'flex':'none';
+  const badge=document.getElementById('session-role-badge'),unameEl=document.getElementById('session-username');
+  if(loggedIn){
+    const label=isAdmin?'Admin':isApp?'Application Team':isAudit?'Audit Team':'Viewer';
+    const bg=isAdmin?'#FEE9EB':isApp?'#E5F3EC':isAudit?'#F0EBFB':'#EBF2FB';
+    const fg=isAdmin?'#B91C2E':isApp?'#1A6B42':isAudit?'#5B3B9E':'#1859A0';
+    badge.style.cssText=`display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;background:${bg};color:${fg};border:1px solid ${fg}33`;
+    badge.textContent=(isAdmin?'🔐 ':isApp?'🧩 ':isAudit?'🔎 ':'🔵 ')+label;unameEl.textContent=name;document.getElementById('sb-logout-label').textContent='Sign Out ('+name+')';document.getElementById('sb-footer-user').textContent=name+' · '+label;
+  }else{badge.style.display='none';unameEl.textContent='';document.getElementById('sb-footer-user').textContent='RBL Bank · IAM Team · v22.0';}
+  updateDataPill();
+}
+
+// ════════════════════════════════════════════
+//  STORAGE HELPERS
+// ════════════════════════════════════════════
+const SERVER_DATA_KEYS=new Set(['uam:sops','uam:acm:cols','uam:acm:rows','uam:acm:ts','uam:users:cols','uam:users:rows','uam:users:ts','uam:monthly','uam:monthly:ts','uam:audit:evidence','uam_handover_apps']);
+function localRead(key){try{const r=localStorage.getItem(key);return r?JSON.parse(r):null;}catch{return null;}}
+function localWrite(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){console.warn('local store err',e);}}
+async function serverWrite(key,val){
+  const r=await fetch('/api/app-data/'+encodeURIComponent(key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:val})});
+  if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||('Server data save failed ('+r.status+')'));}
+  return true;
+}
+async function store(key,val){
+  localWrite(key,val);
+  if(!SERVER_DATA_KEYS.has(key))return;
+  try{await serverWrite(key,val);}catch(e){console.warn('server store err',key,e.message);}
+}
+async function retrieve(key){
+  if(!SERVER_DATA_KEYS.has(key))return localRead(key);
+  try{
+    const r=await fetch('/api/app-data/'+encodeURIComponent(key),{cache:'no-store'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.exists){localWrite(key,d.value);return d.value;}
+      const legacy=localRead(key);
+      if(legacy!==null){
+        try{await serverWrite(key,legacy);console.info('Migrated '+key+' from browser storage to server storage');}catch(e){console.warn('migration failed',key,e.message);}
+        return legacy;
+      }
+      return null;
+    }
+    if(r.status===401||r.status===403)return null;
+  }catch(e){console.warn('server retrieve err',key,e.message);}
+  return localRead(key);
+}
+async function del(key){
+  try{localStorage.removeItem(key);}catch(e){}
+  if(!SERVER_DATA_KEYS.has(key))return;
+  try{await fetch('/api/app-data/'+encodeURIComponent(key),{method:'DELETE'});}catch(e){console.warn('server delete err',key,e.message);}
+}
+
+// ════════════════════════════════════════════
+//  IN-MEMORY STATE
+// ════════════════════════════════════════════
+let STATE = {
+  sops: [],           // [{id,name,category,version,uploadedAt,content}]
+  acmCols: [],        // column headers
+  acmRows: [],        // array of row objects
+  acmUpdatedAt: null,
+  usersCols: [],
+  usersRows: [],
+  usersUpdatedAt: null,
+  monthly: [],        // [{key:'Jan-2026', month, year, created, closed, pending, slaBreached, cats, apps}]
+  monthlyUpdatedAt: null,
+};
+
+// ════════════════════════════════════════════
+//  INIT: Load all data from storage
+// ════════════════════════════════════════════
+async function initApp(){
+  STATE.sops        = (await retrieve('uam:sops'))     || [];
+  STATE.acmCols     = (await retrieve('uam:acm:cols')) || [];
+  STATE.acmRows     = (await retrieve('uam:acm:rows')) || [];
+  STATE.acmUpdatedAt = await retrieve('uam:acm:ts');
+  STATE.usersCols   = (await retrieve('uam:users:cols')) || [];
+  STATE.usersRows   = (await retrieve('uam:users:rows')) || [];
+  STATE.usersUpdatedAt = await retrieve('uam:users:ts');
+  { // normalize legacy JML uploads into one canonical schema, then drop duplicates/password columns
+    let changed=false;
+    const normalized=STATE.usersRows.map(normalizeJMLRow);
+    if(JSON.stringify(normalized)!==JSON.stringify(STATE.usersRows)){STATE.usersRows=normalized;changed=true;}
+    const {unique,dup}=dedupeJML(STATE.usersRows); if(dup){STATE.usersRows=unique;changed=true;}
+    for(const r of STATE.usersRows)for(const k of Object.keys(r))if(/password/i.test(k)){delete r[k];changed=true;}
+    const keep=jmlCols(STATE.usersRows); if(STATE.usersCols.length!==keep.length||STATE.usersCols.some((c,i)=>c!==keep[i])){STATE.usersCols=keep;changed=true;}
+    if(changed){ await store('uam:users:rows',STATE.usersRows); await store('uam:users:cols',STATE.usersCols); } }
+  STATE.monthly     = (await retrieve('uam:monthly')) || [];
+  STATE.monthlyUpdatedAt = await retrieve('uam:monthly:ts');
+  HO_APPS = (await retrieve('uam_handover_apps')) || [];
+  refreshAll();
+}
+
+function refreshAll(){
+  updateNavCounts();
+  updateDataPill();
+  updateDataSummary();
+  renderSOPList();
+  renderACMTable();
+  renderUsersTable();
+  renderDashboard();
+  renderSOPDMList();
+  renderACMDMPreview();
+  renderUsersDMPreview();
+  renderMonthlyDMList();
+  renderHandover();
+  renderAuditQueries();
+  loadAuditEvidence();
+}
+
+function updateNavCounts(){
+  document.getElementById('sop-nav-count').textContent = STATE.sops.length;
+  document.getElementById('acm-nav-count').textContent = STATE.acmRows.length;
+  document.getElementById('users-nav-count').textContent = STATE.usersRows.length;
+  document.getElementById('dash-nav-count').textContent = STATE.monthly.length;
+}
+
+function updateDataPill(){
+  const pill=document.getElementById('data-status-pill'); if(!pill)return;
+  if(SESSION.role!=='admin'){pill.style.display='none';return;}
+  pill.style.display='inline-flex';
+  const total=STATE.sops.length+STATE.acmRows.length+STATE.usersRows.length+STATE.monthly.length;
+  if(total===0){pill.className='pill pill-r';pill.textContent='No data loaded';}
+  else{pill.className='pill pill-g';pill.textContent=`${total} records loaded`;}
+}
+
+function updateDataSummary(){
+  const el = document.getElementById('data-summary-body');
+  if(!STATE.sops.length && !STATE.acmRows.length && !STATE.usersRows.length && !STATE.monthly.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--txt3)">No data loaded yet. Visit ⚙️ Data Manager to upload your files.</div>';
+    return;
+  }
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div><span style="font-size:18px;font-weight:700;color:var(--rbl)">${STATE.sops.length}</span><br><span style="color:var(--txt2)">SOPs</span></div>
+      <div><span style="font-size:18px;font-weight:700;color:var(--blue)">${STATE.acmRows.length}</span><br><span style="color:var(--txt2)">ACM Apps</span></div>
+      <div><span style="font-size:18px;font-weight:700;color:var(--green)">${STATE.usersRows.length}</span><br><span style="color:var(--txt2)">User Records</span></div>
+      <div><span style="font-size:18px;font-weight:700;color:var(--amber)">${STATE.monthly.length}</span><br><span style="color:var(--txt2)">Monthly Datasets</span></div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+const pageCfg = {
+  chat:     ['FAQ Chatbot','AI-powered answers from your uploaded SOPs, ACM & data'],
+  sop:      ['SOP Guidelines','Search, browse and get AI summaries of your SOP documents'],
+  acm:      ['ACM Applications','Your Application Control Matrix — uploaded from your own data'],
+  users:    ['Joiner / Mover / Leaver','Track onboarding, department moves and offboarding lifecycle events'],
+  dashboard:['Monthly Dashboard','Request creation, closure, and SLA metrics from your monthly data'],
+  handover: ['App Handover Process','New application UAM handover checklist'],
+  audit:    ['Audit Q&A','Generate audit-ready responses using your uploaded policies and SOPs'],
+  data:     ['⚙️ Data Manager','Upload and manage your SOPs, ACM, Joiner/Leaver data & monthly stats'],
+  usersmgmt:['👤 User Management','Create and manage portal users and roles'],
+};
+function go(id){
+  // Block viewer from admin pages FIRST
+  if(id==='audit' && !['admin','audit'].includes(SESSION.role)){ toast('⛔ Audit Team or Admin access required'); return; }
+  if(['users','dashboard','usersmgmt'].includes(id) && SESSION.role!=='admin'){ toast('⛔ Admin access only'); return; }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('on');
+  const navEl=document.getElementById('nav-'+id); if(navEl) navEl.classList.add('active');
+  document.getElementById('pg-title').textContent = pageCfg[id][0];
+  document.getElementById('pg-meta').textContent  = pageCfg[id][1];
+  if(id==='sop') showSOPPage();
+  if(id==='acm') showACMPage();
+  if(id==='users') showUsersPage();
+  if(id==='dashboard') showDashPage();
+  if(id==='handover') renderHandover();
+  if(id==='usersmgmt') loadPortalUsers(); else updateDataPill(); if(id==='data'&&SESSION.role==='application'){dmTab('sop-dm');document.querySelectorAll('#dm-tabs .tab').forEach((t,i)=>t.style.display=i<2?'':'none');}else if(id==='data'){document.querySelectorAll('#dm-tabs .tab').forEach(t=>t.style.display='');}
+}
+
+// ════════════════════════════════════════════
+//  MODALS
+// ════════════════════════════════════════════
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.addEventListener('click', e=>{
+  if(e.target.classList.contains('overlay')) e.target.classList.remove('show');
+  if(e.target.id==='admin-login-modal') closeAdminModal();
+});
+
+// ════════════════════════════════════════════
+//  PORTAL USER MANAGEMENT
+// ════════════════════════════════════════════
+let PORTAL_USERS=[];
+let MU_SORT={k:'name',dir:1};
+function resetUserFilters(){['mu-search','mu-status-filter','mu-role-filter','mu-dept-filter'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});renderPortalUsers();}
+function muQuickFilter(kind){const sf=document.getElementById('mu-status-filter'),rf=document.getElementById('mu-role-filter');if(kind==='active'){sf.value=sf.value==='active'?'':'active';}else if(kind==='admin'){rf.value=rf.value==='admin'?'':'admin';}renderPortalUsers();}
+document.addEventListener('click',e=>{const th=e.target.closest&&e.target.closest('#mu-thead th.sortable');if(!th)return;const k=th.dataset.k;MU_SORT=MU_SORT.k===k?{k,dir:-MU_SORT.dir}:{k,dir:1};renderPortalUsers();});
+function portalUserPayload(){return {name:document.getElementById('mu-name').value.trim(),username:document.getElementById('mu-username').value.trim(),password:document.getElementById('mu-password').value,email:document.getElementById('mu-email').value.trim(),empCode:document.getElementById('mu-empcode').value.trim(),grade:document.getElementById('mu-grade').value.trim(),designation:document.getElementById('mu-designation').value.trim(),manager:document.getElementById('mu-manager').value.trim(),joiningDate:document.getElementById('mu-joiningdate').value,status:document.getElementById('mu-status').value,role:document.getElementById('mu-role').value,department:document.getElementById('mu-dept').value.trim()};}
+async function syncAllJMLToPortalUsers(){
+  if(SESSION.role!=='admin' || !Array.isArray(STATE.usersRows) || !STATE.usersRows.length) return null;
+  try{
+    const rows=STATE.usersRows.map(normalizeJMLRow).filter(r=>r['Employee ID']||r['Employee Name']||r['Portal Username']);
+    if(!rows.length)return null;
+    const r=await fetch('/api/users/import-jml',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'JML user synchronization failed');
+    return d;
+  }catch(e){console.warn('JML → User Management sync failed:',e);return null;}
+}
+function portalRoleLabel(role){return role==='admin'?'Admin':role==='application'?'Application Team':role==='audit'?'Audit Team':'Viewer';}
+async function enrichJMLFromPortalUsers(){
+  if(!Array.isArray(STATE.usersRows)||!STATE.usersRows.length||!Array.isArray(PORTAL_USERS)||!PORTAL_USERS.length)return;
+  const norm=v=>String(v||'').trim().toLowerCase();
+  let changed=false;
+  STATE.usersRows=STATE.usersRows.map(raw=>{
+    const r=normalizeJMLRow(raw);
+    const u=PORTAL_USERS.find(x=>(r['Employee ID']&&norm(x.empCode)===norm(r['Employee ID']))||(r['Portal Username']&&norm(x.username)===norm(r['Portal Username']))||(r['Email ID']&&norm(x.email)===norm(r['Email ID'])));
+    if(u){
+      r['Employee ID']=r['Employee ID']||u.empCode||'';
+      r['Employee Name']=r['Employee Name']||u.name||'';
+      r['Portal Username']=r['Portal Username']||u.username||'';
+      r['Email ID']=normalizeAdminEmailClient(r['Email ID']||u.email,u.username);
+      r['Department']=r['Department']||u.department||'';
+      r['Grade']=r['Grade']||u.grade||'';
+      r['Designation']=r['Designation']||u.designation||'';
+      r['Manager']=r['Manager']||u.manager||'';
+      r['Applications']=r['Applications']||'UAM Portal';
+      r['Access Role']=r['Access Role']||portalRoleLabel(u.role);
+      if(!r['Remarks']){const t=normalizeJMLType(r['Event Type']);if(t==='Mover')r['Remarks']=`Department changed from ${r['Previous Department']||'previous department'} to ${r['Department']||u.department||'new department'}.`;else if(t==='Joiner')r['Remarks']='User created/activated through User Management.';else if(t==='Leaver')r['Remarks']='User deactivated/deleted through User Management.';}
+    }
+    if(JSON.stringify(r)!==JSON.stringify(raw))changed=true;
+    return r;
+  });
+  const cols=jmlCols(STATE.usersRows);if(JSON.stringify(cols)!==JSON.stringify(STATE.usersCols)){STATE.usersCols=cols;changed=true;}
+  if(changed){await store('uam:users:rows',STATE.usersRows);await store('uam:users:cols',STATE.usersCols);renderUsersTable();renderUsersDMPreview();}
+}
+async function loadPortalUsers(){
+  if(SESSION.role!=='admin')return;
+  try{
+    // Server-side users are persistent and authoritative after the initial JML bootstrap.
+    // Only rebuild from browser JML when the server has no managed users yet. Re-importing
+    // JML on every page load would overwrite manual edits made in User Management.
+    let r=await fetch('/api/users');let d=await r.json();if(!r.ok)throw new Error(d.error);
+    if((d.users||[]).length<=1 && Array.isArray(STATE.usersRows) && STATE.usersRows.length){
+      await syncAllJMLToPortalUsers();
+      r=await fetch('/api/users');d=await r.json();if(!r.ok)throw new Error(d.error);
+    }
+    PORTAL_USERS=d.users||[];await enrichJMLFromPortalUsers();renderPortalUsers();updateUserMgmtLivePill();
+  }catch(e){toast('⚠️ '+(e.message||'Could not load users'));}
+}
+function updateUserMgmtLivePill(){const pill=document.getElementById('data-status-pill');if(!pill)return;pill.className='pill pill-g';pill.textContent=`${PORTAL_USERS.length} users live`;}
+function renderPortalUsers(){
+  const el=document.getElementById('mu-list'); if(!el)return;
+  const q=(document.getElementById('mu-search')?.value||'').toLowerCase();
+  const sf=(document.getElementById('mu-status-filter')?.value||'').toLowerCase();
+  const rf=(document.getElementById('mu-role-filter')?.value||'').toLowerCase();
+  const df=(document.getElementById('mu-dept-filter')?.value||'');
+  const depts=[...new Set(PORTAL_USERS.map(u=>u.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const ds=document.getElementById('mu-dept-filter'); if(ds){const cur=ds.value;ds.innerHTML='<option value="">All Departments</option>'+depts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');ds.value=depts.includes(cur)?cur:'';}
+  const list=PORTAL_USERS.filter(u=>{const active=!(u.active===false||String(u.status||'').toLowerCase()==='inactive');const hay=[u.name,u.username,u.email,u.empCode,u.grade,u.designation,u.manager,u.joiningDate,u.status,u.department,u.role].join(' ').toLowerCase();return (!q||hay.includes(q))&&(!sf||(sf==='active'?active:!active))&&(!rf||u.role===rf)&&(!df||u.department===df);});
+  const isInactive=u=>u.active===false||String(u.status||'').toLowerCase()==='inactive';
+  const sv=u=>MU_SORT.k==='status'?(isInactive(u)?'inactive':'active'):String(u[MU_SORT.k]||'').toLowerCase();
+  list.sort((a,b)=>sv(a).localeCompare(sv(b),undefined,{numeric:true})*MU_SORT.dir);
+  document.querySelectorAll('#mu-thead th.sortable').forEach(th=>{const a=th.querySelector('.arr');if(a)a.textContent=th.dataset.k===MU_SORT.k?(MU_SORT.dir>0?'▲':'▼'):'';});
+  const mc=document.getElementById('mu-count');if(mc)mc.textContent=PORTAL_USERS.length;const vc=document.getElementById('mu-visible-count');if(vc)vc.textContent=list.length;
+  const activeUsers=PORTAL_USERS.filter(u=>u.active!==false&&String(u.status||'Active').toLowerCase()!=='inactive').length,inactiveUsers=PORTAL_USERS.length-activeUsers,admins=PORTAL_USERS.filter(u=>u.role==='admin').length,appTeams=PORTAL_USERS.filter(u=>u.role==='application').length,auditors=PORTAL_USERS.filter(u=>u.role==='audit').length,viewers=PORTAL_USERS.filter(u=>u.role==='viewer').length,deptsCount=depts.length;
+  const k=document.getElementById('mu-kpis');if(k)k.innerHTML=`<div class="stat clickable${sf==='active'?' on':''}" onclick="muQuickFilter('active')" title="Click to filter active users"><div class="stat-lbl">Active / Total Users</div><div class="stat-val">${activeUsers} / ${PORTAL_USERS.length}</div><div class="stat-sub">${inactiveUsers} inactive</div></div><div class="stat clickable${rf==='admin'?' on':''}" onclick="muQuickFilter('admin')" title="Click to filter admins"><div class="stat-lbl">Admins</div><div class="stat-val" style="color:var(--red)">${admins}</div></div><div class="stat"><div class="stat-lbl">Viewer / App / Audit</div><div class="stat-val" style="color:var(--blue)">${viewers} / ${appTeams} / ${auditors}</div></div><div class="stat"><div class="stat-lbl">Departments</div><div class="stat-val" style="color:var(--green)">${deptsCount}</div></div>`;
+  if(!list.length){el.innerHTML='<tr><td colspan="8"><div class="empty"><div class="empty-t">No users match the selected filters</div></div></td></tr>';return;}
+  const roleLabel=r=>r==='application'?'Application Team':r==='audit'?'Audit Team':r==='admin'?'Admin':'Viewer';
+  el.innerHTML=list.map(u=>{const inactive=u.active===false||String(u.status||'').toLowerCase()==='inactive';return `<tr title="${esc(u.name||u.username)}"><td><div class="mu-v13-employee"><div class="mu-v13-avatar">${esc((u.name||u.username||'?').charAt(0).toUpperCase())}</div><div style="min-width:0"><div class="mu-v13-name">${esc(u.name||'—')}</div><div class="mu-v13-sub">${u.email?esc(u.email)+' · ':''}@${esc(u.username||'—')}${u.source==='jml-import'?' · JML Sync':''}</div></div></div></td><td>${esc(u.empCode||'—')}</td><td title="${esc(u.department||'')}">${esc(u.department||'—')}</td><td><div>${esc(u.designation||'—')}</div><div class="mu-v13-sub">${u.grade?'Grade '+esc(u.grade):'—'}</div></td><td title="${esc(u.manager||'')}">${esc(u.manager||'—')}</td><td><span class="badge ${u.role==='admin'?'badge-r':u.role==='application'?'badge-g':u.role==='audit'?'badge-a':'badge-b'}">${roleLabel(u.role)}</span></td><td><span class="badge ${inactive?'badge-r':'badge-g'}">${inactive?'Inactive':'Active'}</span></td><td>${u.source==='env'?'<span class="badge badge-a">Primary</span>':`<div class="mu-v13-actions-cell"><button class="btn btn-ghost btn-sm" onclick="editPortalUser('${u.id}')">✏ Edit</button><button class="btn btn-danger btn-sm" onclick="deletePortalUser('${u.id}')">🗑</button></div>`}</td></tr>`}).join('');
+}
+function editPortalUser(id){const u=PORTAL_USERS.find(x=>x.id===id);if(!u||u.source==='env')return;document.getElementById('mu-edit-id').value=u.id;document.getElementById('mu-name').value=u.name||'';document.getElementById('mu-username').value=u.username||'';document.getElementById('mu-password').value='';document.getElementById('mu-email').value=u.email||'';document.getElementById('mu-empcode').value=u.empCode||'';document.getElementById('mu-grade').value=u.grade||'';document.getElementById('mu-designation').value=u.designation||'';document.getElementById('mu-manager').value=u.manager||'';document.getElementById('mu-joiningdate').value=u.joiningDate||'';document.getElementById('mu-status').value=u.status||'Active';document.getElementById('mu-role').value=u.role||'viewer';document.getElementById('mu-dept').value=u.department||'';document.getElementById('mu-form-title').textContent='✏️ Edit User';document.getElementById('mu-save-btn').textContent='Save Changes';document.getElementById('mu-cancel-btn').style.display='inline-flex';document.getElementById('mu-pass-req').textContent='(optional)';document.getElementById('mu-username').disabled=true;document.getElementById('mu-editor-overlay').classList.add('open');}
+function openUserEditor(){cancelEditPortalUser(false);document.getElementById('mu-editor-overlay').classList.add('open');document.getElementById('mu-name').focus();}
+function cancelEditPortalUser(close=true){['mu-edit-id','mu-name','mu-username','mu-password','mu-email','mu-empcode','mu-grade','mu-designation','mu-manager','mu-joiningdate','mu-dept'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('mu-status').value='Active';document.getElementById('mu-role').value='viewer';document.getElementById('mu-form-title').textContent='➕ Add User';document.getElementById('mu-save-btn').textContent='Create User';document.getElementById('mu-pass-req').textContent='*';document.getElementById('mu-username').disabled=false;if(close)document.getElementById('mu-editor-overlay').classList.remove('open');}
+function openBulkUserModal(){document.getElementById('mu-bulk-overlay').classList.add('open');}
+function closeBulkUserModal(){document.getElementById('mu-bulk-overlay').classList.remove('open');}
+async function savePortalUser(){
+  const id=document.getElementById('mu-edit-id').value;
+  const body=portalUserPayload();
+  if(!body.name||!body.username||!body.email||!body.empCode||!body.department||(!id&&body.password.length<8)){
+    toast('⚠️ Name, username, email, emp code, department and password (new users) are required');return;
+  }
+  const btn=document.getElementById('mu-save-btn'), oldText=btn.textContent;
+  btn.disabled=true;btn.textContent=id?'Saving…':'Creating…';
+  try{
+    const r=await fetch(id?'/api/users/'+encodeURIComponent(id):'/api/users',{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||`Request failed (${r.status})`);
+    if(d.lifecycleEvent)await appendLifecycleEvent(d.lifecycleEvent);
+    cancelEditPortalUser();
+    await loadPortalUsers();
+    toast(id?'✅ User changes saved':'✅ User created · Joiner event added');
+  }catch(e){toast('⚠️ '+(e.message||'Could not save user'));}
+  finally{btn.disabled=false;if(document.getElementById('mu-edit-id').value)btn.textContent='Save Changes';else btn.textContent='Create User';}
+}
+async function deletePortalUser(id){const u=PORTAL_USERS.find(x=>x.id===id);if(!confirm(`Delete ${u?.name||'this portal user'}? A Leaver event will be created.`))return;try{const r=await fetch('/api/users/'+encodeURIComponent(id),{method:'DELETE'});const d=await r.json();if(!r.ok)throw new Error(d.error);await appendLifecycleEvent(d.lifecycleEvent);await loadPortalUsers();toast('🗑️ User deleted · Leaver event added');}catch(e){toast('⚠️ '+e.message);}}
+function downloadUserTemplate(){const csv='name,username,password,email,empCode,grade,designation,manager,joiningDate,status,role,department\nPriya Sharma,priya.sharma,ChangeMe@123,priya.sharma@admin.com,EMP1001,M1,Analyst,Rajesh Kumar,2026-10-25,Active,viewer,IAM Team\nRahul Mehta,rahul.mehta,ChangeMe@456,rahul.mehta@admin.com,EMP1002,M2,Manager,Manali Shah,2026-10-25,Active,admin,IT Security\n';const b=new Blob([csv],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='uam_bulk_users_template.csv';a.click();URL.revokeObjectURL(a.href);}
+function bulkCreateUsers(inp){const file=inp.files?.[0];if(!file)return;const result=document.getElementById('mu-bulk-result');result.textContent='Reading '+file.name+'…';Papa.parse(file,{header:true,skipEmptyLines:true,complete:async parsed=>{try{const users=(parsed.data||[]).map(r=>({name:String(r.name||r['Full Name']||'').trim(),username:String(r.username||r['User Name']||'').trim(),password:String(r.password||r.Password||''),email:String(r.email||r['Email ID']||'').trim(),empCode:String(r.empCode||r['Emp Code']||'').trim(),grade:String(r.grade||r.Grade||'').trim(),designation:String(r.designation||r.Designation||'').trim(),manager:String(r.manager||r.Manager||'').trim(),joiningDate:String(r.joiningDate||r['Joining Date']||'').trim(),status:String(r.status||r.Status||'Active').trim(),role:String(r.role||r.Role||'viewer').trim().toLowerCase(),department:String(r.department||r.Department||'').trim()}));if(!users.length)throw new Error('CSV has no user rows.');const resp=await fetch('/api/users/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users})});const d=await resp.json();if(!resp.ok)throw new Error(d.error||'Bulk creation failed.');for(const evt of (d.lifecycleEvents||[]))await appendLifecycleEvent(evt);result.innerHTML=`<span style="color:var(--green)">Created ${d.created} user(s)</span>${d.failed?` · <span style="color:var(--red)">${d.failed} failed</span>`:''}`;await loadPortalUsers();toast(`✅ Bulk import: ${d.created} created · Joiner events added`);}catch(e){result.textContent='⚠️ '+e.message;toast('⚠️ '+e.message);}finally{inp.value='';}},error:()=>{result.textContent='⚠️ Could not parse CSV';inp.value='';}});}
+
+// ════════════════════════════════════════════
+//  DATA MANAGER TABS
+// ════════════════════════════════════════════
+function dmTab(pane){
+  if(SESSION.role==='application'&&!['sop-dm','acm-dm'].includes(pane)){toast('⛔ Application Team can manage SOP and ACM only');return;}
+  document.querySelectorAll('.dm-pane').forEach(p=>p.style.display='none');
+  document.getElementById(pane).style.display='block';
+  document.querySelectorAll('#dm-tabs .tab').forEach((t,i)=>{
+    t.classList.toggle('on', ['sop-dm','acm-dm','users-dm','monthly-dm'][i]===pane);
+  });
+}
+
+// ════════════════════════════════════════════
+//  SOP MODULE
+// ════════════════════════════════════════════
+let activeSOP = null;
+let PENDING_ACM=null, PENDING_USERS=null;
+async function extractSOPFileText(file){
+  const name=(file.name||'').toLowerCase();
+  if(/^(text\/)|json|csv|markdown/i.test(file.type)||/\.(txt|md|csv|json)$/i.test(name)) return (await file.text()).slice(0,300000);
+  const buf=await file.arrayBuffer();
+  if(/\.pdf$/i.test(name)||file.type==='application/pdf'){
+    if(!window.pdfjsLib) throw new Error('PDF reader failed to load. Check internet access and try again.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise; const pages=[];
+    for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i), tc=await pg.getTextContent(); pages.push(tc.items.map(x=>x.str).join(' '));}
+    return pages.join('\n\n').slice(0,300000);
+  }
+  if(/\.docx$/i.test(name)){
+    if(!window.mammoth) throw new Error('Word reader failed to load. Check internet access and try again.');
+    const out=await mammoth.extractRawText({arrayBuffer:buf}); return String(out.value||'').slice(0,300000);
+  }
+  if(/\.(xlsx|xls)$/i.test(name)){
+    if(!window.XLSX) throw new Error('Excel reader failed to load. Check internet access and try again.');
+    const wb=XLSX.read(buf,{type:'array'}); return wb.SheetNames.map(n=>'['+n+']\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n').slice(0,300000);
+  }
+  if(/\.doc$/i.test(name)) throw new Error('Legacy .doc text extraction is not supported. Please save the SOP as .docx or PDF.');
+  return '';
+}
+async function readSOPAttachment(inputId){
+  const inp=document.getElementById(inputId), file=inp?.files?.[0];
+  if(!file) return null;
+  if(file.size>5*1024*1024) throw new Error('Attachment must be 5 MB or smaller.');
+  const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('Could not read attachment.'));r.readAsDataURL(file);});
+  const text=await extractSOPFileText(file);
+  return {name:file.name,type:file.type||'application/octet-stream',size:file.size,data,text};
+}
+async function ensureSOPAttachmentText(s){
+  if(!s?.attachment||s.attachment.text||!s.attachment.data) return s?.attachment?.text||'';
+  try{
+    const res=await fetch(s.attachment.data); const blob=await res.blob(); const file=new File([blob],s.attachment.name,{type:s.attachment.type||blob.type});
+    s.attachment.text=await extractSOPFileText(file); if(!s.content&&s.attachment.text) s.content=s.attachment.text;
+    await store('uam:sops',STATE.sops); return s.attachment.text||'';
+  }catch(e){console.error('SOP extraction failed',e);return '';}
+}
+
+function downloadSOPAttachment(id){ const s=STATE.sops.find(x=>x.id===id); if(!s?.attachment?.data)return; const a=document.createElement('a');a.href=s.attachment.data;a.download=s.attachment.name;a.click(); }
+
+async function saveSOP(){
+  if(!['admin','application'].includes(SESSION.role)){toast('⛔ Admin or Application Team access required');return;}
+  const name = document.getElementById('sop-name-inp').value.trim();
+  const content = document.getElementById('sop-content-inp').value.trim();
+  let attachment=null; try{ attachment=await readSOPAttachment('sop-attachment-inp'); }catch(e){ toast('⚠️ '+e.message); return; }
+  if(!name||(!content&&!attachment)){ toast('⚠️ SOP Name is required. Add content or attach a file.'); return; }
+  const entry = { id: Date.now()+'', name, category: document.getElementById('sop-cat-inp').value, version: document.getElementById('sop-ver-inp').value, content: content || attachment?.text || '', attachment, uploadedAt: new Date().toISOString() };
+  STATE.sops.push(entry);
+  await store('uam:sops', STATE.sops);
+  closeModal('sop-modal');
+  document.getElementById('sop-name-inp').value=''; document.getElementById('sop-content-inp').value=''; document.getElementById('sop-ver-inp').value=''; document.getElementById('sop-attachment-inp').value='';
+  refreshAll();
+  toast('✅ SOP saved successfully');
+}
+
+async function saveDMSOP(){
+  if(!['admin','application'].includes(SESSION.role)){toast('⛔ Admin or Application Team access required');return;}
+  const name = document.getElementById('dm-sop-name').value.trim();
+  const content = document.getElementById('dm-sop-content').value.trim();
+  let attachment=null; try{ attachment=await readSOPAttachment('dm-sop-attachment'); }catch(e){ toast('⚠️ '+e.message); return; }
+  if(!name||(!content&&!attachment)){ toast('⚠️ SOP Name is required. Add content or attach a file.'); return; }
+  const entry = { id: Date.now()+'', name, category: document.getElementById('dm-sop-cat').value, version: document.getElementById('dm-sop-ver').value, content: content || attachment?.text || '', attachment, uploadedAt: new Date().toISOString() };
+  STATE.sops.push(entry);
+  await store('uam:sops', STATE.sops);
+  document.getElementById('dm-sop-name').value=''; document.getElementById('dm-sop-content').value=''; document.getElementById('dm-sop-ver').value=''; document.getElementById('dm-sop-attachment').value='';
+  refreshAll(); toast('✅ SOP saved');
+}
+
+async function deleteSOP(id){
+  if(!confirm('Delete this SOP?')) return;
+  STATE.sops = STATE.sops.filter(s=>s.id!==id);
+  await store('uam:sops', STATE.sops);
+  if(activeSOP===id) activeSOP=null;
+  refreshAll(); toast('🗑️ SOP deleted');
+}
+
+function filterSOPs(){
+  const q = document.getElementById('sop-search').value.toLowerCase();
+  const filtered = STATE.sops.filter(s=>s.name.toLowerCase().includes(q)||s.category.toLowerCase().includes(q)||(s.content||'').toLowerCase().includes(q));
+  renderSOPListItems(filtered);
+}
+
+function renderSOPList(){ renderSOPListItems(STATE.sops); }
+
+function renderSOPListItems(list){
+  const el = document.getElementById('sop-list');
+  if(!el) return;
+  if(!list.length){ el.innerHTML='<div class="empty" style="padding:20px 0"><div>No SOPs found</div></div>'; return; }
+  el.innerHTML = list.map(s=>`
+    <div class="sop-item ${activeSOP===s.id?'active':''}" onclick="viewSOP('${s.id}')">
+      <div class="sop-cat">${s.category} ${s.version?'· '+s.version:''}</div>
+      <div class="sop-name">${s.name}</div>
+      <div class="sop-preview">${(s.content||s.attachment?.text||'Attachment uploaded — click to read').substring(0,80)}…</div>
+    </div>`).join('');
+}
+
+function renderSOPDMList(){
+  const el = document.getElementById('sop-dm-list');
+  if(!el) return;
+  document.getElementById('sop-dm-count').textContent = STATE.sops.length;
+  if(!STATE.sops.length){ el.innerHTML='<div style="font-size:12px;color:var(--txt3)">No SOPs added yet.</div>'; return; }
+  el.innerHTML = STATE.sops.map(s=>`
+    <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;margin-bottom:7px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:2px">${s.name}</div>
+        <div style="font-size:11px;color:var(--txt3)">${s.category} ${s.version?'· '+s.version:''} · ${fmtDate(s.uploadedAt)}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:2px">${s.content?s.content.length+' chars':''}${s.attachment?' · 📎 '+esc(s.attachment.name):''}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteSOP('${s.id}')">Delete</button>
+    </div>`).join('');
+}
+
+async function viewSOP(id){
+  activeSOP = id;
+  renderSOPList();
+  const s = STATE.sops.find(x=>x.id===id);
+  if(!s) return;
+  if(!s.content && s.attachment){ const panel=document.getElementById('sop-detail-panel'); panel.innerHTML='<div class=\"card-b\">Reading SOP attachment…</div>'; await ensureSOPAttachmentText(s); }
+  const panel = document.getElementById('sop-detail-panel');
+  panel.innerHTML=`
+    <div class="card-h"><div class="card-ht">${s.name}</div><span class="badge badge-b">${s.category}</span></div>
+    <div class="card-b">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        ${s.version?`<span class="badge badge-p">Version: ${s.version}</span>`:''}
+        <span style="font-size:11px;color:var(--txt3)">Last updated: ${fmtDate(s.uploadedAt)}</span>${s.attachment?`<button class="btn btn-ghost btn-sm" onclick="downloadSOPAttachment('${id}')">📎 ${esc(s.attachment.name)}</button>`:''}
+        <button class="btn btn-p btn-sm" style="margin-left:auto" onclick="askAIAboutSOP('${id}')">🤖 Ask AI for Summary</button>
+      </div>
+      <pre style="white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;background:var(--surf2);padding:14px;border-radius:8px;max-height:calc(100vh - 280px);overflow-y:auto">${esc(s.content)}</pre>
+    </div>`;
+}
+
+async function askAIAboutSOP(id){
+  const s = STATE.sops.find(x=>x.id===id);
+  if(!s) return;
+  const panel = document.getElementById('sop-detail-panel');
+  const prev = panel.innerHTML;
+  panel.innerHTML = `<div class="card-b"><div class="typing"><span></span><span></span><span></span></div><p style="font-size:12px;color:var(--txt3);margin-top:8px">Generating AI summary…</p></div>`;
+  if(!s.content&&s.attachment) await ensureSOPAttachmentText(s);
+  const resp = await callClaude(SOP_SYS, `Please provide a structured summary of this SOP:\n\nTitle: ${s.name}\n\n${s.content||s.attachment?.text||''}`);
+  panel.innerHTML=`
+    <div class="card-h"><div class="card-ht">🤖 AI Summary: ${s.name}</div><button class="btn btn-ghost btn-sm" onclick="viewSOP('${id}')">View Full SOP</button></div>
+    <div class="card-b" style="font-size:13px;line-height:1.7">${md2html(resp)}</div>`;
+}
+
+function showSOPPage(){
+  const hasSOPs = STATE.sops.length > 0;
+  document.getElementById('sop-empty').style.display = hasSOPs ? 'none' : 'block';
+  document.getElementById('sop-content-area').style.display = hasSOPs ? 'block' : 'none';
+  renderSOPList();
+}
+
+// ════════════════════════════════════════════
+//  ACM MODULE
+// ════════════════════════════════════════════
+function dzOver(e, id){ e.preventDefault(); document.getElementById(id).classList.add('drag'); }
+function dzLeave(id){ document.getElementById(id).classList.remove('drag'); }
+function dzDrop(e, type){ e.preventDefault(); dzLeave(type+'-dropzone'); const f=e.dataTransfer.files[0]; if(f) handleCSVFile(f, type); }
+function loadACMFile(inp){ if(inp.files[0]) handleCSVFile(inp.files[0],'acm'); }
+function loadUsersFile(inp){ if(inp.files[0]) handleCSVFile(inp.files[0],'users'); }
+
+function handleCSVFile(file, type){
+  const reader = new FileReader();
+  reader.onload = e => { parseAndPreviewCSV(e.target.result, type); };
+  reader.readAsText(file);
+}
+
+function parseAndPreviewCSV(text, type){
+  if(type==='acm'){
+    document.getElementById('acm-paste').value = text;
+    previewACMCSV(text);
+  } else if(type==='users'){
+    document.getElementById('users-paste').value = text;
+    previewUsersCSV(text);
+  }
+}
+
+function fileSelected(inp,labelId){const el=document.getElementById(labelId);if(el)el.textContent=inp.files?.[0]?`Selected: ${inp.files[0].name} — click Upload to import.`:'No file selected.';}
+function uploadSelectedCSV(type){const inp=document.getElementById(type==='acm'?'acm-file':type==='users'?'users-file':'monthly-file');if(!inp?.files?.[0]){toast('⚠️ Select a CSV file first');return;}if(type==='users'){const r=new FileReader();r.onload=async e=>{previewUsersCSV(e.target.result);await saveUsersData();};r.onerror=()=>toast('⚠️ Could not read JML CSV');r.readAsText(inp.files[0]);}else if(type==='acm')loadACMFile(inp);else loadMonthlyFile(inp);}
+function renderPendingACMPreview(){if(!PENDING_ACM)return;const th=document.getElementById('acm-dm-thead'),tb=document.getElementById('acm-dm-tbody');document.getElementById('acm-dm-count').textContent=`${STATE.acmRows.length} saved + ${PENDING_ACM.rows.length} pending`;th.innerHTML='<tr>'+PENDING_ACM.cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';tb.innerHTML=PENDING_ACM.rows.slice(0,20).map(r=>'<tr>'+PENDING_ACM.cols.map(c=>`<td>${esc(r[c]||'')}</td>`).join('')+'</tr>').join('');}
+function renderPendingUsersPreview(){if(!PENDING_USERS)return;const res=dedupeJML(PENDING_USERS.rows||[],STATE.usersRows);document.getElementById('users-dm-countline').innerHTML=`<span id="users-dm-count">${res.unique.length}</span> new to save`+(res.dup?` · ${res.dup} duplicate${res.dup>1?'s':''} will be skipped`:'');renderJMLPreviewTable(res.unique,`Pending upload — click "Save" to confirm. ${STATE.usersRows.length} records already saved.`);}
+function previewACMCSV(text){
+  const r = Papa.parse(text.trim(), {header:true, skipEmptyLines:true});
+  PENDING_ACM={cols:r.meta.fields||[],rows:r.data||[]};
+  renderPendingACMPreview();
+  document.getElementById('acm-dm-hint').style.display='block';
+  document.getElementById('acm-dm-hint').textContent=`✅ Parsed ${r.data.length} rows with ${STATE.acmCols.length} columns. Click "Save ACM Data" to confirm.`;
+}
+
+function firstVal(row, names){for(const n of names){const k=Object.keys(row).find(x=>x.trim().toLowerCase()===n.toLowerCase());if(k && String(row[k]??'').trim()!=='')return String(row[k]).trim();}return '';}
+function normalizeJMLType(v){const x=String(v||'').trim().toLowerCase();if(x.startsWith('join')||['new','onboard','onboarding'].includes(x))return 'Joiner';if(x.startsWith('mov')||x.includes('transfer')||x.includes('change'))return 'Mover';if(x.startsWith('leav')||x.includes('exit')||x.includes('offboard')||x.includes('termination'))return 'Leaver';return String(v||'').trim();}
+function normalizeISODate(v){const x=String(v||'').trim();if(!x)return '';let m;if((m=x.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)$/)))return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;if((m=x.match(/^([0-3]?\d)[-\/]([01]?\d)[-\/](\d{4})$/)))return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;const d=new Date(x);return isNaN(d)?'':d.toISOString().slice(0,10);}
+const JML_ALIAS_KEYS=new Set(['employee id','emp id','emp code','employee code','employeeid','employee name','name','full name','user name','portal username','username','user id','login id','email id','email','email address','event type','type','lifecycle event','action','department','new department','current department','previous department','old department','from department','grade','band','designation','job title','title','manager','reporting manager','line manager','effective date','date','joining date','exit date','movement date','applications','application','apps','access role','role','entitlement','remarks','remark','comments','comment','status','request status']);
+function normalizeAdminEmailClient(value,username){const raw=String(value||'').trim().toLowerCase();let local=(raw.includes('@')?raw.split('@')[0]:raw)||String(username||'user').trim().toLowerCase();local=local.replace(/[^a-z0-9._-]+/g,'.').replace(/^\.+|\.+$/g,'')||'user';return `${local}@admin.com`;}
+function normalizeJMLRow(r){const type=normalizeJMLType(firstVal(r,['Event Type','Type','Lifecycle Event','Action']));const username=firstVal(r,['Portal Username','Username','User ID','Login ID']);const rawEmail=firstVal(r,['Email ID','Email','Email Address']);const out={
+ 'Employee ID':firstVal(r,['Employee ID','Emp ID','Emp Code','Employee Code','employeeId']),
+ 'Employee Name':firstVal(r,['Employee Name','Name','Full Name','User Name']),
+ 'Portal Username':username,
+ 'Email ID':rawEmail?normalizeAdminEmailClient(rawEmail,username):'',
+ 'Event Type':type,
+ 'Department':firstVal(r,['Department','New Department','Current Department']),
+ 'Previous Department':firstVal(r,['Previous Department','Old Department','From Department']),
+ 'Grade':firstVal(r,['Grade','Band']),
+ 'Designation':firstVal(r,['Designation','Job Title','Title']),
+ 'Manager':firstVal(r,['Manager','Reporting Manager','Line Manager']),
+ 'Effective Date':normalizeISODate(firstVal(r,['Effective Date','Date','Joining Date','Exit Date','Movement Date'])),
+ 'Applications':firstVal(r,['Applications','Application','Apps']),
+ 'Access Role':firstVal(r,['Access Role','Role','Entitlement']),
+ 'Remarks':firstVal(r,['Remarks','Remark','Comments','Comment']),
+ 'Status':firstVal(r,['Status','Request Status'])||'Completed'
+};for(const [k,v] of Object.entries(r)){const nk=String(k).trim().toLowerCase();if(!JML_ALIAS_KEYS.has(nk)&&!Object.keys(out).includes(k)&&!/password/i.test(k)&&String(v??'').trim()!=='')out[k]=String(v).trim();}return out;}
+const JML_PREFERRED=['Employee ID','Employee Name','Portal Username','Email ID','Event Type','Department','Previous Department','Grade','Designation','Manager','Effective Date','Applications','Access Role','Remarks','Status'];
+// Columns to display: known JML columns first, then any extra columns that actually hold data. Password-like and empty columns are never shown.
+function jmlCols(rows){const has=c=>rows.some(r=>String(r[c]??'').trim()!=='');const cols=JML_PREFERRED.filter(has);const seen=new Set(cols);for(const r of rows)for(const k of Object.keys(r))if(!seen.has(k)&&!/password/i.test(k)&&has(k)){seen.add(k);cols.push(k);}return cols;}
+function renderJMLPreviewTable(rows,note){const th=document.getElementById('users-dm-thead'),tb=document.getElementById('users-dm-tbody');if(!th||!tb)return;const empty=document.getElementById('users-dm-empty');const shown=rows.slice(0,20);const cols=jmlCols(rows);if(empty)empty.style.display=rows.length?'none':'block';if(!rows.length){th.innerHTML='';tb.innerHTML='';return;}
+  th.innerHTML='<tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';
+  tb.innerHTML=shown.map(r=>'<tr>'+cols.map(c=>{let v=String(r[c]??'');if(c==='Event Type'){v=normalizeJMLType(v);const cls=v==='Joiner'?'badge-g':v==='Leaver'?'badge-r':'badge-b';return `<td><span class="badge ${cls}">${esc(v)||'—'}</span></td>`;}if(c==='Effective Date')v=normalizeISODate(v)||v;return `<td title="${esc(v)}">${esc(v)||'—'}</td>`;}).join('')+'</tr>').join('');
+  const n=document.getElementById('users-dm-note');if(n)n.textContent=note||(rows.length>20?`Showing the first 20 of ${rows.length} records. Duplicates are skipped automatically.`:'Duplicates are skipped automatically.');}
+function jmlKey(r){const n=v=>String(v??'').trim().toLowerCase().replace(/\s+/g,' ');return [n(r['Employee ID']||r['Emp ID']),n(normalizeJMLType(r['Event Type']||r.Type||'')),n(normalizeISODate(r['Effective Date']||r.Date||'')),n(r['Department']),n(r['Previous Department']),n(r['Designation']),n(r['Grade']),n(r['Manager'])].join('|');}
+// Keeps the first occurrence of each lifecycle record. Same Emp ID is fine (a person can have several events); an identical event is a duplicate.
+function dedupeJML(rows,existing=[]){const seen=new Set(existing.map(jmlKey));const unique=[];let dup=0;for(const r of rows){const k=jmlKey(r);if(seen.has(k)){dup++;continue;}seen.add(k);unique.push(r);}return {unique,dup};}
+async function appendLifecycleEvent(evt){
+  if(!evt)return false;
+  const row=normalizeJMLRow({
+    'Employee ID':evt.empCode||'',
+    'Employee Name':evt.name||'',
+    'Portal Username':evt.username||'',
+    'Email ID':evt.email||'',
+    'Event Type':evt.type||'',
+    'Department':evt.department||'',
+    'Previous Department':evt.previousDepartment||'',
+    'Grade':evt.grade||'',
+    'Designation':evt.designation||'',
+    'Manager':evt.manager||'',
+    'Effective Date':evt.effectiveDate||new Date().toISOString(),
+    'Applications':evt.applications||'UAM Portal',
+    'Access Role':evt.accessRole||'',
+    'Remarks':evt.remarks||'',
+    'Status':'Completed'
+  });
+  const {unique}=dedupeJML([row],STATE.usersRows);
+  if(!unique.length)return false;
+  STATE.usersRows.push(row);
+  STATE.usersCols=jmlCols(STATE.usersRows);
+  STATE.usersUpdatedAt=new Date().toISOString();
+  await store('uam:users:cols',STATE.usersCols);
+  await store('uam:users:rows',STATE.usersRows);
+  await store('uam:users:ts',STATE.usersUpdatedAt);
+  updateNavCounts();
+  renderUsersTable();
+  renderUsersDMPreview();
+  updateDataPill();
+  return true;
+}
+async function removeJMLDuplicates(silent){if(SESSION.role!=='admin'){toast('⛔ Admin access required');return 0;}const {unique,dup}=dedupeJML(STATE.usersRows);if(!dup){if(!silent)toast('✅ No duplicate JML records found');return 0;}STATE.usersRows=unique;STATE.usersUpdatedAt=new Date().toISOString();await store('uam:users:rows',STATE.usersRows);await store('uam:users:ts',STATE.usersUpdatedAt);refreshAll();showUsersPage();toast(`🧹 Removed ${dup} duplicate JML record${dup>1?'s':''}`);return dup;}
+function previewUsersCSV(text){
+  const r=Papa.parse(text.trim(),{header:true,skipEmptyLines:true});
+  const rows=(r.data||[]).map(normalizeJMLRow).filter(x=>x['Employee ID']||x['Employee Name']||x['Portal Username']);
+  const canonical=['Employee ID','Employee Name','Portal Username','Email ID','Event Type','Department','Previous Department','Grade','Designation','Manager','Effective Date','Applications','Access Role','Remarks','Status'];
+  const extras=[];for(const row of rows)for(const k of Object.keys(row))if(!canonical.includes(k)&&!extras.includes(k))extras.push(k);
+  PENDING_USERS={cols:[...canonical,...extras],rows};renderPendingUsersPreview();
+}
+
+async function saveACMData(){
+  const paste = document.getElementById('acm-paste').value.trim();
+  if(!paste && !STATE.acmRows.length){ toast('⚠️ No ACM data to save'); return; }
+  if(paste){ previewACMCSV(paste); }
+  STATE.acmUpdatedAt = new Date().toISOString();
+  await store('uam:acm:cols', STATE.acmCols);
+  await store('uam:acm:rows', STATE.acmRows);
+  await store('uam:acm:ts', STATE.acmUpdatedAt);
+  refreshAll(); toast('✅ ACM data saved — '+STATE.acmRows.length+' applications');
+}
+
+async function saveUsersData(){
+  const paste=document.getElementById('users-paste').value.trim();if(paste)previewUsersCSV(paste);
+  if(!PENDING_USERS&&!STATE.usersRows.length){toast('⚠️ No JML data to save');return;}
+  let incoming=[];
+  let skippedDup=0;
+  if(PENDING_USERS){const res=dedupeJML(PENDING_USERS.rows||[],STATE.usersRows);incoming=res.unique;skippedDup=res.dup;for(const c of PENDING_USERS.cols||[])if(!STATE.usersCols.includes(c))STATE.usersCols.push(c);STATE.usersRows=STATE.usersRows.concat(incoming.map(r=>({...r})));PENDING_USERS=null;}
+  STATE.usersUpdatedAt=new Date().toISOString();await store('uam:users:cols',STATE.usersCols);await store('uam:users:rows',STATE.usersRows);await store('uam:users:ts',STATE.usersUpdatedAt);
+  if(incoming.length&&SESSION.role==='admin'){try{const resp=await fetch('/api/users/import-jml',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:incoming})});const d=await resp.json();if(!resp.ok)throw new Error(d.error||'User sync failed');await loadPortalUsers();toast(`✅ JML saved · ${incoming.length} new records${skippedDup?` · ${skippedDup} duplicates skipped`:''} · ${d.created||0} users created · ${d.updated||0} updated · ${d.deactivated||0} leavers disabled`);}catch(e){toast('⚠️ JML saved, but User Management sync failed: '+e.message);}}
+  if(!incoming.length&&skippedDup)toast(`ℹ️ All ${skippedDup} uploaded records already exist — nothing was changed`);
+  document.getElementById('users-paste').value='';const fi=document.getElementById('users-file');if(fi)fi.value='';const sel=document.getElementById('users-selected');if(sel)sel.textContent='No file selected.';refreshAll();showUsersPage();
+}
+
+function renderACMDMPreview(){
+  document.getElementById('acm-dm-count').textContent = STATE.acmRows.length;
+  if(STATE.acmUpdatedAt) document.getElementById('acm-dm-updated').textContent = 'Updated '+fmtDate(STATE.acmUpdatedAt);
+  renderGenericTable('acm-dm-thead','acm-dm-tbody', STATE.acmCols, STATE.acmRows.slice(0,5), true);
+}
+
+function renderUsersDMPreview(){
+  const cl=document.getElementById('users-dm-countline');if(cl)cl.innerHTML=`<span id="users-dm-count">${STATE.usersRows.length}</span> records saved`;
+  if(STATE.usersUpdatedAt) document.getElementById('users-dm-updated').textContent = 'Updated '+fmtDate(STATE.usersUpdatedAt);
+  renderJMLPreviewTable(STATE.usersRows);
+}
+
+function renderGenericTable(thId, tbId, cols, rows, compact){
+  const th = document.getElementById(thId);
+  const tb = document.getElementById(tbId);
+  if(!th||!tb) return;
+  th.innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
+  tb.innerHTML = rows.map(r=>'<tr>'+cols.map(c=>{
+    const v = r[c]||'';
+    const isLink = /^https?:\/\//.test(v);
+    return `<td>${isLink?`<a href="${v}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:11px">🔗 Link</a>`:esc(v)}</td>`;
+  }).join('')+'</tr>').join('');
+}
+
+function renderACMTable(){
+  showACMPage();
+}
+
+function showACMPage(){
+  const has = STATE.acmRows.length > 0;
+  const empty = document.getElementById('acm-empty');
+  const content = document.getElementById('acm-content-area');
+  if(!empty||!content) return;
+  empty.style.display = has ? 'none' : 'block';
+  content.style.display = has ? 'block' : 'none';
+  if(!has) return;
+  if(STATE.acmUpdatedAt) document.getElementById('acm-updated').textContent = 'Updated '+fmtDate(STATE.acmUpdatedAt);
+  const q = (document.getElementById('acm-search')||{value:''}).value.toLowerCase();
+  const filtered = q ? STATE.acmRows.filter(r=>Object.values(r).some(v=>(v||'').toLowerCase().includes(q))) : STATE.acmRows;
+  const th=document.getElementById('acm-thead'), tb=document.getElementById('acm-tbody');
+  if(!th||!tb) return;
+  const canEdit=['admin','application'].includes(SESSION.role);const dupBtn=document.getElementById('acm-dedupe-btn');if(dupBtn)dupBtn.style.display=canEdit?'inline-flex':'none';
+  th.innerHTML='<tr>'+STATE.acmCols.map(c=>`<th>${esc(c)}</th>`).join('')+(canEdit?'<th>Action</th>':'')+'</tr>';
+  tb.innerHTML=filtered.map(r=>{
+    const originalIndex=STATE.acmRows.indexOf(r);
+    return '<tr>'+STATE.acmCols.map(c=>{
+      const v=String(r[c]||'');
+      const isLink=/^https?:\/\//.test(v);
+      return `<td>${isLink?`<a href="${esc(v)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-size:11px">🔗 Link</a>`:esc(v)}</td>`;
+    }).join('')+(canEdit?`<td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="editACMRow(${originalIndex})">✏ Edit</button><button class="btn btn-danger btn-sm" onclick="deleteACMRow(${originalIndex})">🗑 Delete</button></div></td>`:'')+'</tr>';
+  }).join('');
+}
+
+async function deleteACMRow(index){
+  if(!['admin','application'].includes(SESSION.role)){ toast('⛔ Edit permission required'); return; }
+  const row=STATE.acmRows[index]; if(!row) return;
+  const nameCol=STATE.acmCols.find(c=>/application.*name|app.*name|application/i.test(c));
+  const label=nameCol&&row[nameCol]?row[nameCol]:'this application';
+  if(!confirm(`Delete ${label} from ACM? This cannot be undone.`)) return;
+  STATE.acmRows.splice(index,1); STATE.acmUpdatedAt=new Date().toISOString();
+  await store('uam:acm:rows',STATE.acmRows); await store('uam:acm:ts',STATE.acmUpdatedAt);
+  refreshAll(); showACMPage(); toast('🗑 ACM record deleted');
+}
+
+
+async function removeACMDuplicates(){if(!['admin','application'].includes(SESSION.role)){toast('⛔ Edit permission required');return;}const keyCol=STATE.acmCols.find(c=>/application.*name|app.*name|application/i.test(c))||STATE.acmCols[0];const seen=new Set();let removed=0;STATE.acmRows=STATE.acmRows.filter(r=>{const k=String(r[keyCol]||'').trim().toLowerCase();if(!k)return true;if(seen.has(k)){removed++;return false;}seen.add(k);return true;});if(!removed){toast('✅ No duplicate ACM entries found');return;}await store('uam:acm:rows',STATE.acmRows);refreshAll();toast(`🧹 Removed ${removed} duplicate ACM entr${removed===1?'y':'ies'}`);}
+async function editACMRow(index){if(!['admin','application'].includes(SESSION.role)){toast('⛔ Edit permission required');return;}const row=STATE.acmRows[index];if(!row)return;const updated={...row};for(const c of STATE.acmCols){const v=prompt('Update '+c, String(row[c]||''));if(v===null)return;updated[c]=v.trim();}STATE.acmRows[index]=updated;STATE.acmUpdatedAt=new Date().toISOString();await store('uam:acm:rows',STATE.acmRows);await store('uam:acm:ts',STATE.acmUpdatedAt);refreshAll();toast('✅ ACM record updated');}
+
+// ════════════════════════════════════════════
+//  USERS MODULE
+// ════════════════════════════════════════════
+function showUsersPage(){
+  const has = STATE.usersRows.length > 0;
+  document.getElementById('users-empty').style.display = has ? 'none' : 'block';
+  document.getElementById('users-content-area').style.display = has ? 'block' : 'none';
+  if(!has) return;
+  if(STATE.usersUpdatedAt) document.getElementById('users-updated').textContent = 'Updated '+fmtDate(STATE.usersUpdatedAt);
+  renderUsersTable();
+}
+
+function renderUsersTable(){
+  if(!STATE.usersRows.length)return;
+  const q=(document.getElementById('u-search')?.value||'').trim().toLowerCase(), selectedType=(document.getElementById('u-type')?.value||''), fromV=document.getElementById('u-from')?.value||'',toV=document.getElementById('u-to')?.value||'';
+  const rows=STATE.usersRows.filter(r=>{const type=normalizeJMLType(r['Event Type']||r.Type||'');const d=normalizeISODate(r['Effective Date']||r.Date||'');if(q&&!Object.values(r).some(v=>String(v||'').toLowerCase().includes(q)))return false;if(selectedType&&type!==selectedType)return false;if(fromV&&(!d||d<fromV))return false;if(toV&&(!d||d>toV))return false;return true;});
+  const count=t=>rows.filter(r=>normalizeJMLType(r['Event Type']||r.Type||'')===t).length;
+  document.getElementById('user-stats').innerHTML=`<div class="stat"><div class="stat-lbl">Total Records</div><div class="stat-val">${rows.length}</div></div><div class="stat"><div class="stat-lbl">Joiners</div><div class="stat-val" style="color:var(--green)">${count('Joiner')}</div></div><div class="stat"><div class="stat-lbl">Movers</div><div class="stat-val" style="color:var(--blue)">${count('Mover')}</div></div><div class="stat"><div class="stat-lbl">Leavers</div><div class="stat-val" style="color:var(--red)">${count('Leaver')}</div></div>`;
+  const preferred=['Employee ID','Employee Name','Portal Username','Email ID','Event Type','Department','Previous Department','Grade','Designation','Manager','Effective Date','Status'];const cols=preferred.filter(c=>rows.some(r=>String(r[c]||'').trim()!==''));for(const c of STATE.usersCols)if(!cols.includes(c)&&!/password/i.test(c)&&rows.some(r=>String(r[c]||'').trim()!==''))cols.push(c);
+  const canDelete=SESSION.role==='admin';const jb=document.getElementById('jml-dedupe-btn');if(jb)jb.style.display=canDelete?'inline-flex':'none';const th=document.getElementById('users-thead'),tb=document.getElementById('users-tbody');th.innerHTML='<tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+(canDelete?'<th>Action</th>':'')+'</tr>';
+  tb.innerHTML=rows.slice(0,500).map(r=>{const idx=STATE.usersRows.indexOf(r);return '<tr>'+cols.map(c=>{let v=String(r[c]||'');if(c==='Event Type')v=normalizeJMLType(v);if(c==='Effective Date')v=normalizeISODate(v)||v;if(c==='Event Type'){const cls=v==='Joiner'?'badge-g':v==='Leaver'?'badge-r':'badge-b';return `<td><span class="badge ${cls}">${esc(v)||'—'}</span></td>`;}if(/status/i.test(c)){const cls=/complet|active/i.test(v)?'badge-g':/progress/i.test(v)?'badge-a':'badge-b';return `<td><span class="badge ${cls}">${esc(v)||'—'}</span></td>`;}return `<td>${esc(v)||'—'}</td>`;}).join('')+(canDelete?`<td><button class="btn btn-danger btn-sm" onclick="deleteJMLRow(${idx})">🗑 Delete</button></td>`:'')+'</tr>';}).join('');
+  document.getElementById('users-updated').textContent=rows.length+' records shown';
+}
+
+async function deleteJMLRow(index){
+  if(SESSION.role!=='admin'){ toast('⛔ Admin access required'); return; }
+  const row=STATE.usersRows[index]; if(!row) return;
+  const nameCol=STATE.usersCols.find(c=>/employee.*name|user.*name|name/i.test(c));
+  const idCol=STATE.usersCols.find(c=>/employee.*id|emp.*id|user.*id/i.test(c));
+  const label=(nameCol&&row[nameCol])||(idCol&&row[idCol])||'this JML record';
+  if(!confirm(`Delete ${label}? This cannot be undone.`)) return;
+  STATE.usersRows.splice(index,1); STATE.usersUpdatedAt=new Date().toISOString();
+  await store('uam:users:rows',STATE.usersRows); await store('uam:users:ts',STATE.usersUpdatedAt);
+  refreshAll(); showUsersPage(); toast('🗑 JML record deleted');
+}
+
+function exportUsersCSV(){
+  if(!STATE.usersRows.length){ toast('No data to export'); return; }
+  const csv = Papa.unparse({fields:STATE.usersCols, data:STATE.usersRows});
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='UAM_JoinerLeaver_Export.csv'; a.click();
+  toast('⬇ CSV exported');
+}
+
+// ════════════════════════════════════════════
+//  MONTHLY DASHBOARD
+// ════════════════════════════════════════════
+function parseKV(str){ // "Key:Val, Key2:Val2" → [{l,v}]
+  if(!str) return [];
+  return str.split(',').map(s=>{ const [l,...rest]=s.split(':'); return {l:l.trim(), v:parseFloat(rest.join(':').trim())||0}; }).filter(x=>x.l);
+}
+
+async function saveDMMonthly(){
+  const month=document.getElementById('dm-m-month').value, year=+document.getElementById('dm-m-year').value;
+  const created=+document.getElementById('dm-m-created').value||0, closed=+document.getElementById('dm-m-closed').value||0;
+  const pending=+document.getElementById('dm-m-pending').value||0, slaBreached=+document.getElementById('dm-m-sla').value||0;
+  const cats=parseKV(document.getElementById('dm-m-cats').value);
+  const appCreated=parseKV(document.getElementById('dm-m-app-created').value), appClosed=parseKV(document.getElementById('dm-m-app-closed').value), apps=parseKV(document.getElementById('dm-m-apps').value);
+  const key=month+'-'+year;
+  STATE.monthly = STATE.monthly.filter(m=>m.key!==key);
+  STATE.monthly.push({key,month,year,created,closed,pending,slaBreached,cats,appCreated,appClosed,apps});
+  STATE.monthly.sort((a,b)=>{ const months=['January','February','March','April','May','June','July','August','September','October','November','December']; return (a.year-b.year)||months.indexOf(a.month)-months.indexOf(b.month); });
+  STATE.monthlyUpdatedAt=new Date().toISOString();
+  await store('uam:monthly', STATE.monthly);
+  await store('uam:monthly:ts', STATE.monthlyUpdatedAt);
+  refreshAll(); toast('✅ Monthly data saved for '+month+' '+year);
+}
+
+async function saveMonthlyEntry(){
+  const month=document.getElementById('m-month').value, year=+document.getElementById('m-year').value;
+  const created=+document.getElementById('m-created').value||0, closed=+document.getElementById('m-closed').value||0;
+  const pending=+document.getElementById('m-pending').value||0, slaBreached=+document.getElementById('m-sla').value||0;
+  const cats=parseKV(document.getElementById('m-cats').value);
+  const apps=parseKV(document.getElementById('m-apps').value);
+  const key=month+'-'+year;
+  STATE.monthly=STATE.monthly.filter(m=>m.key!==key);
+  STATE.monthly.push({key,month,year,created,closed,pending,slaBreached,cats,apps});
+  STATE.monthlyUpdatedAt=new Date().toISOString();
+  await store('uam:monthly', STATE.monthly);
+  await store('uam:monthly:ts', STATE.monthlyUpdatedAt);
+  closeModal('monthly-modal');
+  refreshAll(); toast('✅ Saved');
+}
+
+async function deleteMonthly(key){
+  STATE.monthly = STATE.monthly.filter(m=>m.key!==key);
+  await store('uam:monthly', STATE.monthly);
+  refreshAll(); toast('🗑️ Month removed');
+}
+
+function loadMonthlyFile(inp){
+  if(!inp.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const r=Papa.parse(e.target.result.trim(),{header:true,skipEmptyLines:true,dynamicTyping:true});
+    for(const row of r.data){
+      const month=row['Month']||row['month'], year=+(row['Year']||row['year'])||2026;
+      const key=month+'-'+year;
+      STATE.monthly=STATE.monthly.filter(m=>m.key!==key);
+      STATE.monthly.push({key, month, year,
+        created:+(row['Created']||row['created']||0),
+        closed:+(row['Closed']||row['closed']||0),
+        pending:+(row['Pending']||row['pending']||0),
+        slaBreached:+(row['SLA Breached']||row['sla_breached']||0),
+        cats:parseKV(row['Category Breakdown']||row['Categories']||''), appCreated:parseKV(row['App Created Requests']||''), appClosed:parseKV(row['App Closed Requests']||''), apps:parseKV(row['App Closure %']||row['App Closure']||'')
+      });
+    }
+    STATE.monthlyUpdatedAt=new Date().toISOString();
+    await store('uam:monthly',STATE.monthly);
+    await store('uam:monthly:ts',STATE.monthlyUpdatedAt);
+    refreshAll(); toast('✅ Monthly CSV imported — '+r.data.length+' months');
+  };
+  reader.readAsText(inp.files[0]);
+}
+
+function renderMonthlyDMList(){
+  const el=document.getElementById('monthly-dm-list'); if(!el) return;
+  document.getElementById('monthly-dm-count').textContent=STATE.monthly.length;
+  if(!STATE.monthly.length){ el.innerHTML='<div style="font-size:12px;color:var(--txt3)">No monthly data added yet.</div>'; return; }
+  el.innerHTML=STATE.monthly.slice().reverse().map(m=>`
+    <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:600">${m.month} ${m.year}</div>
+        <div style="font-size:11.5px;color:var(--txt3);margin-top:2px">Created: ${m.created} · Closed: ${m.closed} · Pending: ${m.pending} · SLA Breached: ${m.slaBreached}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteMonthly('${m.key}')">Delete</button>
+    </div>`).join('');
+}
+
+function showDashPage(){
+  const has=STATE.monthly.length>0;
+  document.getElementById('dash-empty').style.display=has?'none':'block';
+  document.getElementById('dash-content-area').style.display=has?'block':'none';
+  if(!has) return;
+  const sel=document.getElementById('dash-month-sel');
+  const cur=sel.value;
+  sel.innerHTML=STATE.monthly.slice().reverse().map(m=>`<option value="${m.key}">${m.month} ${m.year}</option>`).join('');
+  if(cur && STATE.monthly.find(m=>m.key===cur)) sel.value=cur;
+  if(STATE.monthlyUpdatedAt) document.getElementById('dash-updated').textContent='Updated '+fmtDate(STATE.monthlyUpdatedAt);
+  renderDashboard();
+}
+
+function renderDashboard(){
+  if(!STATE.monthly.length) return;
+  const sel=document.getElementById('dash-month-sel'); if(!sel) return;
+  const key=sel.value; if(!key) return;
+  const d=STATE.monthly.find(m=>m.key===key); if(!d) return;
+  const cr=d.created||0, cl=d.closed||0, rate=cr?Math.round(cl/cr*100):0;
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat"><div class="stat-lbl">Requests Created</div><div class="stat-val">${cr}</div><div class="stat-sub">${d.month} ${d.year}</div></div>
+    <div class="stat"><div class="stat-lbl">Requests Closed</div><div class="stat-val" style="color:var(--green)">${cl}</div><div class="stat-sub">Closure rate: ${rate}%</div></div>
+    <div class="stat"><div class="stat-lbl">Pending</div><div class="stat-val" style="color:var(--amber)">${d.pending||0}</div><div class="stat-sub">open requests</div></div>
+    <div class="stat"><div class="stat-lbl">SLA Breached</div><div class="stat-val" style="color:var(--red)">${d.slaBreached||0}</div><div class="stat-sub">needs attention</div></div>`;
+
+  const catsEl=document.getElementById('dash-cats');
+  if(d.cats&&d.cats.length){
+    const max=Math.max(...d.cats.map(c=>c.v));
+    catsEl.innerHTML=d.cats.map(c=>`
+      <div class="bar-row">
+        <div class="bar-lbl">${c.l}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.v/max*100)}%;background:var(--rbl)"></div></div>
+        <div class="bar-val">${c.v}</div>
+      </div>`).join('');
+  } else { catsEl.innerHTML='<div style="font-size:12px;color:var(--txt3)">No category breakdown data. Add it via ⚙️ Data Manager.</div>'; }
+
+  const vol=document.getElementById('dash-app-volume');if(vol){const names=[...new Set([...(d.appCreated||[]).map(x=>x.l),...(d.appClosed||[]).map(x=>x.l)])];vol.innerHTML=names.length?'<div class="label" style="margin-bottom:8px">App Created / Closed Requests</div>'+names.map(n=>{const cr=(d.appCreated||[]).find(x=>x.l===n)?.v||0,cl=(d.appClosed||[]).find(x=>x.l===n)?.v||0;return `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--bdr)"><span style="flex:1">${esc(n)}</span><span class="badge badge-b">Created ${cr}</span><span class="badge badge-g">Closed ${cl}</span></div>`}).join(''):'<div class="hint">No application request-volume breakdown.</div>';}
+  const appsEl=document.getElementById('dash-apps');
+  if(d.apps&&d.apps.length){
+    appsEl.innerHTML=d.apps.map(a=>{
+      const pct=Math.min(100,Math.max(0,a.v));
+      const color=pct>=95?'var(--green)':pct>=85?'var(--amber)':'var(--red)';
+      return `<div class="bar-row">
+        <div class="bar-lbl">${a.l}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="bar-val" style="color:${color}">${pct}%</div>
+      </div>`;
+    }).join('');
+  } else { appsEl.innerHTML='<div style="font-size:12px;color:var(--txt3)">No app breakdown data. Add it via ⚙️ Data Manager.</div>'; }
+}
+
+// ════════════════════════════════════════════
+//  APPLICATION HANDOVER TRACKER
+// ════════════════════════════════════════════
+const HO_STEPS=[
+  {n:1,name:'Intake & Scoping',owner:'IAM Team + App Owner',desc:'Receive the formal application handover request and confirm scope, ownership, user population and regulatory classification.'},
+  {n:2,name:'Application Profiling',owner:'IAM Analyst + IT Architect',desc:'Document authentication, provisioning, role model, user inventory and technical dependencies.'},
+  {n:3,name:'ACM Creation',owner:'IAM Analyst',desc:'Build and approve the Application Control Matrix, entitlements, SoD rules and approval workflow.'},
+  {n:4,name:'Integration & Provisioning Setup',owner:'IAM Engineer',desc:'Configure provisioning/deprovisioning, MFA and required integrations, then validate technical logs.'},
+  {n:5,name:'SOP & Training',owner:'IAM Team Lead',desc:'Create the application SOP and complete knowledge transfer for operations, helpdesk and approvers.'},
+  {n:6,name:'UAT & Sign-Off',owner:'App Owner + IAM Lead',desc:'Execute UAT for provisioning, deprovisioning and governance scenarios and obtain formal sign-off.'},
+  {n:7,name:'Go-Live & Hypercare',owner:'IAM Team',desc:'Move the application to production ownership and monitor the agreed hypercare period.'}
+];
+let HO_APPS=[]; let hoActiveApp=null;
+function hoLoad(){ /* Loaded centrally by initApp from persistent server storage. */ }
+function hoSave(){ store('uam_handover_apps',HO_APPS); }
+function hoAddApplication(){ const name=document.getElementById('ho-app-name').value.trim(),owner=document.getElementById('ho-app-owner').value.trim(); if(!name){toast('⚠️ Enter application name');return;} if(HO_APPS.some(a=>a.name.toLowerCase()===name.toLowerCase())){toast('⚠️ Application already exists');return;} const app={id:'ho_'+Date.now(),name,owner,statuses:HO_STEPS.map((_,i)=>i===0?'in_progress':'not_started'),updatedAt:new Date().toISOString()}; HO_APPS.unshift(app);hoActiveApp=app.id;hoSave();document.getElementById('ho-app-name').value='';document.getElementById('ho-app-owner').value='';renderHandover();toast('✅ Application added to handover tracker'); }
+function hoProgress(app){ const done=app.statuses.filter(x=>x==='completed').length; return Math.round(done/HO_STEPS.length*100); }
+function hoOverall(app){ if(app.statuses.every(x=>x==='completed'))return 'Completed'; if(app.statuses.some(x=>x==='in_progress'||x==='completed'))return 'In Progress'; return 'Not Started'; }
+function renderHandover(){ hoLoad(); const el=document.getElementById('ho-app-list');if(!el)return;const q=(document.getElementById('ho-search')?.value||'').toLowerCase();const list=HO_APPS.filter(a=>(a.name+' '+(a.owner||'')).toLowerCase().includes(q));document.getElementById('ho-app-count').textContent=HO_APPS.length;if(!hoActiveApp&&HO_APPS[0])hoActiveApp=HO_APPS[0].id; el.innerHTML=list.length?list.map(a=>{const pct=hoProgress(a),st=hoOverall(a);return `<div class="sop-item ${a.id===hoActiveApp?'active':''}" onclick="hoSelectApp('${a.id}')"><div style="display:flex;justify-content:space-between;gap:8px"><div class="sop-name">${esc(a.name)}</div><span class="badge ${st==='Completed'?'badge-g':st==='In Progress'?'badge-a':'badge-b'}">${st}</span></div><div class="sop-preview">${esc(a.owner||'No owner')} · ${pct}% complete</div><div class="bar-track" style="margin-top:8px"><div class="bar-fill" style="width:${pct}%;background:var(--green)"></div></div></div>`}).join(''):'<div class="empty"><div class="empty-ico">🔄</div><div class="empty-t">No applications tracked</div><div class="empty-s">Add an application above to start its handover.</div></div>';hoShowApplication(); }
+function hoSelectApp(id){hoActiveApp=id;renderHandover();}
+function hoShowApplication(){ const panel=document.getElementById('ho-detail-panel');if(!panel)return;const app=HO_APPS.find(a=>a.id===hoActiveApp);if(!app){panel.innerHTML='<div class="card"><div class="empty"><div class="empty-ico">📌</div><div class="empty-t">Select an application</div><div class="empty-s">Track each handover step as Not Started, In Progress or Completed.</div></div></div>';return;} const pct=hoProgress(app),overall=hoOverall(app);panel.innerHTML=`<div class="card"><div class="card-h"><div><div class="card-ht">${esc(app.name)}</div><div class="hint">${esc(app.owner||'Application owner not set')}</div></div><div style="display:flex;gap:8px;align-items:center"><span class="badge ${overall==='Completed'?'badge-g':overall==='In Progress'?'badge-a':'badge-b'}">${overall}</span><button class="btn btn-danger btn-sm" onclick="hoDeleteApp('${app.id}')">Delete</button></div></div><div class="card-b"><div class="row" style="margin-bottom:14px"><div style="flex:1"><div class="label">Overall Progress</div><div class="bar-track" style="height:10px"><div class="bar-fill" style="width:${pct}%;background:var(--green)"></div></div></div><strong>${pct}%</strong></div><div style="display:flex;flex-direction:column;gap:9px">${HO_STEPS.map((s,i)=>{const st=app.statuses[i]||'not_started';return `<div class="user-row" style="align-items:flex-start"><div class="step-num" style="background:${st==='completed'?'var(--green)':st==='in_progress'?'var(--amber)':'var(--bdr2)'}">${st==='completed'?'✓':s.n}</div><div class="user-info"><div class="user-nm">${s.name}</div><div class="user-meta">${s.owner}</div><div class="hint">${s.desc}</div></div><select class="inp inp-sm" style="width:135px" onchange="hoSetStatus('${app.id}',${i},this.value)"><option value="not_started" ${st==='not_started'?'selected':''}>Not Started</option><option value="in_progress" ${st==='in_progress'?'selected':''}>In Progress</option><option value="completed" ${st==='completed'?'selected':''}>Completed</option></select></div>`}).join('')}</div><div class="hint" style="margin-top:12px">Last updated: ${new Date(app.updatedAt).toLocaleString()}</div></div></div>`; }
+function hoSetStatus(id,idx,status){const app=HO_APPS.find(a=>a.id===id);if(!app)return;app.statuses[idx]=status;if(status==='completed'&&idx+1<app.statuses.length&&app.statuses[idx+1]==='not_started')app.statuses[idx+1]='in_progress';app.updatedAt=new Date().toISOString();hoSave();renderHandover();}
+function hoDeleteApp(id){const app=HO_APPS.find(a=>a.id===id);if(!app||!confirm('Delete handover tracker for '+app.name+'?'))return;HO_APPS=HO_APPS.filter(a=>a.id!==id);hoActiveApp=HO_APPS[0]?.id||null;hoSave();renderHandover();toast('🗑️ Application removed');}
+
+// ════════════════════════════════════════════
+//  AUDIT MODULE
+// ════════════════════════════════════════════
+const AUDIT_QS=[
+  {cat:'Access Control',q:'Provide evidence that terminated employees\' access was revoked within the defined SLA.'},
+  {cat:'Privileged Access',q:'List all users with privileged/admin access and the business justification for each.'},
+  {cat:'Access Review',q:'Share the last quarterly access recertification report and exceptions list.'},
+  {cat:'SoD Compliance',q:'How are Segregation of Duties conflicts identified and resolved?'},
+  {cat:'Audit Trail',q:'Demonstrate that access provisioning and revocation logs are retained for minimum 3 years.'},
+  {cat:'Vendor Access',q:'Provide details of all third-party/vendor access including duration, scope, and approvals.'},
+  {cat:'Password Policy',q:'Confirm that password complexity and rotation policies are enforced across critical systems.'},
+  {cat:'Least Privilege',q:'How does the UAM team ensure the principle of least privilege is maintained across applications?'},
+  {cat:'Joiner/Leaver',q:'How is the joiner-mover-leaver process managed? Show evidence for last quarter.'},
+  {cat:'Emergency Access',q:'Describe the break-glass access procedure and show the log of emergency access usage.'},
+];
+let activeAQ=-1;
+function renderAuditQueries(){
+  const el=document.getElementById('audit-q-list'); if(!el) return;
+  el.innerHTML=AUDIT_QS.map((q,i)=>`
+    <div class="audit-q-item ${i===activeAQ?'active':''}" onclick="runAuditQuery(${i})">
+      <div class="aq-cat">${q.cat}</div>
+      <div class="aq-text">${q.q}</div>
+    </div>`).join('');
+}
+async function runAuditQuery(i){
+  activeAQ=i; renderAuditQueries();
+  await generateAuditResponse(AUDIT_QS[i].q, AUDIT_QS[i].cat);
+}
+async function runCustomAudit(){
+  const q=(document.getElementById('custom-aq')||{value:''}).value.trim();
+  if(!q){ toast('Type a query first'); return; }
+  activeAQ=-1; renderAuditQueries();
+  await generateAuditResponse(q, 'Custom');
+}
+async function generateAuditResponse(q, cat){
+  const panel=document.getElementById('audit-resp-panel');
+  panel.innerHTML=`<div class="card" style="padding:20px"><div class="typing"><span></span><span></span><span></span></div><p style="font-size:12px;color:var(--txt3);margin-top:8px">Generating audit response…</p></div>`;
+  // Build context from uploaded SOPs
+  const sopCtx = STATE.sops.map(s=>`SOP: ${s.name}\n${s.content.substring(0,500)}`).join('\n\n');
+  const acmCtx = STATE.acmRows.length ? `ACM covers ${STATE.acmRows.length} applications.` : ''; const evidenceCtx=AUDIT_EVIDENCE.map(e=>`${e.name}: ${e.text||'[uploaded evidence file]'}`).join('\n');
+  const sysPrompt = `You are a UAM Audit Response Specialist for RBL Bank (private sector bank, ~10,000 employees).
+Generate professional, complete audit responses citing available tools: SailPoint ISC, Microsoft Entra ID, CyberArk PAM, ServiceNow, Active Directory.
+Reference RBI IS Guidelines and ISO 27001 where applicable.
+Structure your response with these sections using HTML: Control in Place, Evidence Available, Responsible Team, Review Frequency.
+${sopCtx ? 'Use these uploaded SOPs as reference:\n'+sopCtx : ''}
+${acmCtx}
+${evidenceCtx?'Uploaded audit evidence:\n'+evidenceCtx:''}
+Keep response professional and audit-ready. Use <strong> for headings, <ul><li> for lists.`;
+  const resp=await callClaude(sysPrompt, `Audit Query: "${q}"`);
+  panel.innerHTML=`<div class="card">
+    <div class="card-h">
+      <div><span class="badge badge-a" style="margin-right:6px">${cat}</span><span style="font-size:13px;font-weight:600">Audit Response</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="copyText('audit-resp-body')">📋 Copy</button>
+    </div>
+    <div class="card-b">
+      <div style="background:var(--surf2);border-radius:7px;padding:11px 13px;margin-bottom:14px;font-size:12.5px;color:var(--txt2);font-style:italic">"${esc(q)}"</div>
+      <div id="audit-resp-body" style="font-size:13px;line-height:1.7">${md2html(resp)}</div>
+      <div style="margin-top:14px;font-size:11px;color:var(--txt3)">⚠️ Review with your compliance team before submitting to auditors. Generated ${new Date().toLocaleDateString('en-IN')}.</div>
+    </div>
+  </div>`;
+}
+function copyText(id){ const el=document.getElementById(id); if(el){ navigator.clipboard.writeText(el.innerText).then(()=>toast('📋 Copied!')).catch(()=>toast('Select and copy manually')); } }
+
+// ════════════════════════════════════════════
+//  CHAT MODULE
+// ════════════════════════════════════════════
+function getFaqUserStats(){
+  // Prefer the exact same in-memory directory rendered by User Management.
+  if(Array.isArray(PORTAL_USERS)&&PORTAL_USERS.length){
+    const activeUsers=PORTAL_USERS.filter(u=>u.active!==false&&String(u.status||'Active').toLowerCase()!=='inactive');
+    const inactiveUsers=PORTAL_USERS.filter(u=>!activeUsers.includes(u));
+    const roles={admin:0,viewer:0,application:0,audit:0};
+    PORTAL_USERS.forEach(u=>{const r=String(u.role||'viewer').toLowerCase();if(Object.prototype.hasOwnProperty.call(roles,r))roles[r]++;});
+    const departments=new Set(PORTAL_USERS.map(u=>String(u.department||'').trim()).filter(Boolean));
+    return {total:PORTAL_USERS.length,active:activeUsers.length,inactive:inactiveUsers.length,departments:departments.size,roles,source:'user-management-ui'};
+  }
+
+  // After logout/page reload the Admin-only directory may not be loaded. Rebuild a safe
+  // aggregate from the saved JML lifecycle dataset so FAQ counts remain useful.
+  const identities=new Map();
+  (STATE.usersRows||[]).map(normalizeJMLRow).forEach(r=>{
+    const emp=String(r['Employee ID']||'').trim(), email=String(r['Email ID']||'').trim().toLowerCase(), username=String(r['Portal Username']||'').trim().toLowerCase(), name=String(r['Employee Name']||'').trim().toLowerCase();
+    const key=(emp&&'emp:'+emp.toLowerCase())||(email&&'mail:'+email)||(username&&'user:'+username)||(name&&'name:'+name);
+    if(!key)return;
+    const type=String(r['Event Type']||'').trim().toLowerCase();
+    const prev=identities.get(key)||{active:true,department:'',role:'viewer'};
+    prev.active=!(type.startsWith('leav')||type.includes('exit')||type.includes('offboard'));
+    if(String(r.Department||'').trim())prev.department=String(r.Department).trim();
+    const role=String(r.Role||'viewer').trim().toLowerCase();
+    prev.role=['admin','application','audit','viewer'].includes(role)?role:'viewer';
+    identities.set(key,prev);
+  });
+  const vals=[...identities.values()];
+  // The primary .env Admin is part of User Management but not normally present in JML.
+  const roles={admin:1,viewer:0,application:0,audit:0};
+  vals.forEach(u=>{if(Object.prototype.hasOwnProperty.call(roles,u.role))roles[u.role]++;else roles.viewer++;});
+  const active=vals.filter(u=>u.active).length+1, inactive=vals.filter(u=>!u.active).length;
+  const departments=new Set(vals.map(u=>u.department).filter(Boolean)); departments.add('IAM Team');
+  return {total:vals.length+1,active,inactive,departments:departments.size,roles,source:'jml-derived'};
+}
+function getFaqDataSnapshot(){
+  const jml=STATE.usersRows.map(normalizeJMLRow);
+  const count=t=>jml.filter(r=>normalizeJMLType(r['Event Type'])===t).length;
+  return {
+    monthly:STATE.monthly.map(m=>({month:m.month,year:m.year,created:m.created,closed:m.closed,pending:m.pending,slaBreached:m.slaBreached,cats:m.cats||[],appCreated:m.appCreated||[],appClosed:m.appClosed||[],apps:m.apps||[]})),
+    jml:{total:jml.length,joiners:count('Joiner'),movers:count('Mover'),leavers:count('Leaver')},
+    acmCount:STATE.acmRows.length,
+    sopCount:STATE.sops.length
+  };
+}
+const chatHist=[];
+function clearChat(){chatHist.length=0;const wrap=document.getElementById('chat-msgs');wrap.innerHTML=`<div class="msg b"><div class="av">U</div><div class="bubble">👋 Chat cleared. What would you like to know?</div></div>`;document.getElementById('qchips').style.display='flex';toast('🧹 Chat cleared');}
+let AUDIT_EVIDENCE=[];
+async function loadAuditEvidence(){AUDIT_EVIDENCE=(await retrieve('uam:audit:evidence'))||[];renderAuditEvidence();}
+function renderAuditEvidence(){const el=document.getElementById('audit-evidence-list');if(!el)return;el.innerHTML=AUDIT_EVIDENCE.length?AUDIT_EVIDENCE.map(e=>`<div class="evidence-item"><div class="row"><div style="min-width:0;flex:1"><strong>${esc(e.name)}</strong><div class="hint">${esc(e.category||'Audit Evidence')} · ${fmtDate(e.uploadedAt)}</div></div>${SESSION.role==='admin'?`<button class="btn btn-danger btn-sm" onclick="deleteAuditEvidence('${e.id}')">Delete</button>`:''}</div></div>`).join(''):'<div class="hint" style="margin-top:8px">No audit evidence uploaded.</div>';}
+async function addAuditEvidence(inp){if(SESSION.role!=='admin'){toast('⛔ Only UAM Admin can upload audit evidence');inp.value='';return;}for(const file of Array.from(inp.files||[])){if(file.size>2*1024*1024){toast('⚠️ '+file.name+' exceeds 2 MB');continue;}const ext=file.name.split('.').pop().toLowerCase();let text='';if(['txt','md','csv','json'].includes(ext))text=await file.text();AUDIT_EVIDENCE.unshift({id:Date.now()+'-'+Math.random(),name:file.name,category:'Audit Evidence',type:file.type||ext,text:text.slice(0,20000),uploadedAt:new Date().toISOString()});}await store('uam:audit:evidence',AUDIT_EVIDENCE);renderAuditEvidence();inp.value='';toast('✅ Audit evidence uploaded and indexed for FAQ');}
+async function deleteAuditEvidence(id){if(SESSION.role!=='admin'){toast('⛔ Only UAM Admin can delete audit evidence');return;}AUDIT_EVIDENCE=AUDIT_EVIDENCE.filter(e=>e.id!==id);await store('uam:audit:evidence',AUDIT_EVIDENCE);renderAuditEvidence();}
+
+async function doChat(){
+  const inp=document.getElementById('chat-inp');
+  const msg=inp.value.trim(); if(!msg) return;
+  inp.value='';
+  document.getElementById('qchips').style.display='none';
+  appendMsg('u', esc(msg));
+  const tid=appendTyping();
+  document.getElementById('chat-send').disabled=true;
+  chatHist.push({role:'user',content:msg});
+  try{
+    const sys=buildChatSystem();
+    // Build context from all data
+    const ctxMsgs = chatHist.map(m=>`${m.role==='user'?'User':'Assistant'}: ${m.content}`).join('\n');
+    const reply=await callClaude(sys, ctxMsgs);
+    chatHist.push({role:'assistant',content:reply});
+    removeEl(tid);
+    appendMsg('b', md2html(esc(reply)));
+  }catch(e){ removeEl(tid); appendMsg('b','⚠️ Connection error. Please try again.'); }
+  document.getElementById('chat-send').disabled=false;
+}
+
+function buildChatSystem(){
+  const sopCtx=STATE.sops.map(s=>`=== SOP: ${s.name} (${s.category}) ===\n${s.content.substring(0,1000)}${s.attachment?.text?'\nAttachment '+s.attachment.name+':\n'+s.attachment.text.substring(0,1500):''}`).join('\n\n');
+  const acmCtx=STATE.acmRows.length?`=== ACM APPLICATIONS (${STATE.acmRows.length} apps) ===\n`+STATE.acmRows.slice(0,20).map(r=>Object.entries(r).map(([k,v])=>`${k}: ${v}`).join(' | ')).join('\n'):'';
+  const jmlRows=STATE.usersRows.map(normalizeJMLRow);
+  const jmlCounts={joiner:0,mover:0,leaver:0,other:0};
+  jmlRows.forEach(r=>{const t=String(r['Event Type']||'').toLowerCase();if(t==='joiner')jmlCounts.joiner++;else if(t==='mover')jmlCounts.mover++;else if(t==='leaver')jmlCounts.leaver++;else jmlCounts.other++;});
+  const userCtx=jmlRows.length?`=== JML LIFECYCLE DATA (${jmlRows.length} records) ===\nTotal: ${jmlRows.length} | Joiners: ${jmlCounts.joiner} | Movers: ${jmlCounts.mover} | Leavers: ${jmlCounts.leaver}${jmlCounts.other?` | Other: ${jmlCounts.other}`:''}\nColumns: ${STATE.usersCols.join(', ')}\nLifecycle records:\n`+jmlRows.slice(0,100).map(r=>Object.entries(r).filter(([,v])=>String(v??'').trim()).map(([k,v])=>`${k}: ${v}`).join(' | ')).join('\n'):'';
+  const evidenceCtx=AUDIT_EVIDENCE.length?`=== AUDIT EVIDENCE LIBRARY ===\n`+AUDIT_EVIDENCE.map(e=>`${e.name}: ${e.text||'[binary evidence uploaded; searchable by filename/metadata]'}`).join('\n'):'';
+  const dashCtx=STATE.monthly.length?`=== MONTHLY REQUESTS DATA ===\n`+STATE.monthly.slice(-24).map(m=>`${m.month} ${m.year}: Created ${m.created}; Closed ${m.closed}; Pending ${m.pending}; SLA Breached ${m.slaBreached}; Category Breakdown: ${(m.cats||[]).map(x=>`${x.l}:${x.v}`).join(', ')||'N/A'}; App Created Requests: ${(m.appCreated||[]).map(x=>`${x.l}:${x.v}`).join(', ')||'N/A'}; App Closed Requests: ${(m.appClosed||[]).map(x=>`${x.l}:${x.v}`).join(', ')||'N/A'}; App Closure %: ${(m.apps||[]).map(x=>`${x.l}:${x.v}%`).join(', ')||'N/A'}`).join('\n'):'';
+
+  return `You are UAM-GPT, the expert User Access Management assistant for RBL Bank.
+Answer questions using the following ACTUAL data uploaded by the IAM team:
+
+${sopCtx||'[No SOPs uploaded yet — answer based on general IAM best practices]'}
+
+${acmCtx||'[No ACM data uploaded yet]'}
+
+${userCtx||'[No Joiner/Leaver data uploaded yet]'}
+
+${dashCtx||'[No monthly dashboard data uploaded yet]'}
+
+${evidenceCtx||'[No audit evidence uploaded yet]'}
+
+UAM Helpdesk: bank.uam@rblbank.com. Escalation: Level 1 BankUAM; Level 2 Girish / Manali; Level 3 Joel B.
+
+Guidelines:
+- Answer ONLY from the uploaded data when available. If data is not loaded, say so and provide general guidance.
+- For user/access queries, refer to the specific data loaded.
+- The server will append a LIVE USER MANAGEMENT DIRECTORY. Treat that directory as authoritative for current Active/Inactive/Total user counts and current portal-user status.
+- Treat JML lifecycle data as the authoritative history of Joiner/Mover/Leaver events, not as the current portal-account count.
+- Be concise and accurate. Use bullet points for lists.
+- Reference specific SOP names when applicable.
+- For monthly request statistics, use the exact figures from the monthly data.`;
+}
+
+function qsend(el){ document.getElementById('chat-inp').value=el.textContent; doChat(); }
+function appendMsg(role, html){
+  const wrap=document.getElementById('chat-msgs');
+  const d=document.createElement('div'); d.className='msg '+role;
+  d.innerHTML=`<div class="av">${role==='b'?'U':'G'}</div><div class="bubble">${html}</div>`;
+  wrap.appendChild(d); wrap.scrollTop=wrap.scrollHeight; return d.id='msg-'+Date.now();
+}
+let tid=0;
+function appendTyping(){
+  const id='t-'+(++tid);
+  const wrap=document.getElementById('chat-msgs');
+  const d=document.createElement('div'); d.className='msg b'; d.id=id;
+  d.innerHTML=`<div class="av">U</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  wrap.appendChild(d); wrap.scrollTop=wrap.scrollHeight; return id;
+}
+function removeEl(id){ const e=document.getElementById(id); if(e) e.remove(); }
+
+// ════════════════════════════════════════════
+//  GROQ API
+// ════════════════════════════════════════════
+const SOP_SYS=`You are a UAM SOP analyst for RBL Bank. Summarize the provided SOP with: 1) Objective (1-2 sentences), 2) Scope, 3) Key Process Steps (numbered), 4) Roles & Responsibilities, 5) SLAs & Timelines, 6) Escalation Path, 7) Regulatory References. Use HTML formatting with <strong> headings and <ul><li> lists.`;
+
+async function callClaude(sys, msg){
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        max_tokens: 1000,
+        system: sys,
+        messages: [{ role: 'user', content: msg }],
+        live_user_stats: getFaqUserStats(),
+        faq_data: getFaqDataSnapshot()
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Unable to get response.');
+    return d.choices?.[0]?.message?.content || 'Unable to get response.';
+  } catch(e) {
+    console.error('Groq chat error:', e);
+    return '⚠️ ' + (e.message || 'Unable to reach the AI service.');
+  }
+}
+
+function setTheme(theme){
+  const allowed=['rbl','blue','emerald','dark'];
+  const t=allowed.includes(theme)?theme:'rbl';
+  document.body.dataset.theme=t==='rbl'?'':t;
+  localStorage.setItem('uam:theme',t);
+  const sel=document.getElementById('theme-select'); if(sel) sel.value=t;
+}
+function restoreTheme(){ setTheme(localStorage.getItem('uam:theme')||'rbl'); }
+
+// ════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function md2html(s){
+  return String(s||'')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^### (.*?)$/gm,'<h4 style="font-size:13px;font-weight:600;margin:12px 0 4px">$1</h4>')
+    .replace(/^## (.*?)$/gm,'<h3 style="font-size:14px;font-weight:600;margin:14px 0 6px;color:var(--rbl)">$1</h3>')
+    .replace(/^- (.*?)$/gm,'<li style="margin:3px 0">$1</li>')
+    .replace(/(<li.*<\/li>\n?)+/g,'<ul style="padding-left:18px;margin:6px 0">$&</ul>')
+    .replace(/\n\n/g,'</p><p style="margin:8px 0">')
+    .replace(/\n/g,'<br>');
+}
+function fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return iso; } }
+let toastTimer;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800); }
+
+// ── AUTO-START: Load app as public Viewer on page load — no login required ──
+document.addEventListener('DOMContentLoaded', async ()=>{
+  restoreTheme();
+  await restoreSession();
+  await initApp();
+});
+
+// ═════════════════════════════�
+</script>
+</body>
+</html>

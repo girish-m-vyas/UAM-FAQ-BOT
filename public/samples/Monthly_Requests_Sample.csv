@@ -1,0 +1,3 @@
+Month,Year,Created,Closed,Pending,SLA Breached,Category Breakdown,App Created Requests,App Closed Requests,App Closure %
+May,2026,310,298,12,3,"Access Grant:145, Access Revoke:89, Role Change:44, Recertification:32","Finacle:80, Active Directory:90, Salesforce:55","Finacle:78, Active Directory:89, Salesforce:52","Finacle:97.5, Active Directory:98.9, Salesforce:94.5"
+June,2026,335,326,9,2,"Access Grant:156, Access Revoke:96, Role Change:48, Recertification:35","Finacle:86, Active Directory:95, Salesforce:60","Finacle:84, Active Directory:94, Salesforce:58","Finacle:97.7, Active Directory:98.9, Salesforce:96.7"

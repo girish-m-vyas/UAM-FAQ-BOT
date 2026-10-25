@@ -1,0 +1,6 @@
+Application Name,Application ID,Owner/Team,Department,Category,Risk Level,Portal URL,ACM Document URL,SOP URL,Authentication Type,MFA Required,Provisioning Method,Status,Notes
+Finacle,APP001,Core Banking IAM,IT Operations,Core Banking,Critical,https://example.com/finacle,https://example.com/acm/finacle,https://example.com/sop/finacle,SSO/SAML,Yes,Manual,Active,Maker-checker access applies
+Active Directory,APP002,Identity Team,Information Security,Directory,Critical,https://example.com/ad,https://example.com/acm/ad,https://example.com/sop/ad,Kerberos,Yes,PowerShell,Active,Privileged groups require approval
+ServiceNow,APP003,ITSM Team,IT Operations,ITSM,High,https://example.com/servicenow,https://example.com/acm/servicenow,https://example.com/sop/servicenow,SSO/OIDC,Yes,SCIM/API,Active,Role based access
+Salesforce,APP004,CRM Team,Business Applications,CRM,High,https://example.com/salesforce,https://example.com/acm/salesforce,https://example.com/sop/salesforce,SAML,Yes,SCIM,Active,Quarterly access review
+Treasury,APP005,Treasury Technology,Treasury,Treasury,Critical,https://example.com/treasury,https://example.com/acm/treasury,https://example.com/sop/treasury,SSO,Yes,Manual,Active,Restricted business roles

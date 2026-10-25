@@ -1,0 +1,7 @@
+Emp ID,Name,Department,Designation,Type,Date,Manager,Applications,Access Role,Status,Remarks
+RBL1001,Amit Sharma,IT,Analyst,Joiner,2026-10-01,Rajesh Kumar,Active Directory|ServiceNow,Standard User,Completed,New employee onboarding
+RBL1002,Priya Mehta,Operations,Senior Executive,Mover,2026-10-05,Neha Shah,Finacle|ServiceNow,Operations Maker,In Progress,Transferred from Branch Operations
+RBL1003,Rahul Verma,Treasury,Manager,Leaver,2026-10-08,Sanjay Rao,Treasury|Active Directory,Treasury Approver,Completed,Access revoked on last working day
+RBL1004,Sneha Patil,Information Security,Analyst,Joiner,2026-10-12,Vikram Singh,Active Directory|ServiceNow|Salesforce,Security Analyst,In Progress,Pending application owner approval
+RBL1005,Karan Joshi,Finance,Assistant Manager,Mover,2026-10-15,Anita Desai,Finacle|Salesforce,Finance Reviewer,Pending,Role change effective next week
+RBL1006,Meera Nair,HR,Executive,Leaver,2026-10-20,Pooja Iyer,Active Directory|ServiceNow,HR User,Completed,All access removed

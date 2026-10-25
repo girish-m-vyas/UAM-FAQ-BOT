@@ -1,0 +1,5 @@
+name,username,password,email,empCode,grade,designation,manager,joiningDate,status,role,department
+Priya Sharma,priya.sharma,ChangeMe@123,priya.sharma@rblbank.com,EMP1001,M1,Analyst,Rajesh Kumar,2026-10-25,Active,viewer,IAM Team
+Rahul Mehta,rahul.mehta,ChangeMe@456,rahul.mehta@rblbank.com,EMP1002,M2,Manager,Manali Shah,2026-10-25,Active,admin,IT Security
+Amit Patil,amit.patil,ChangeMe@789,amit.patil@rblbank.com,EMP1003,M1,Senior Analyst,Girish Vyas,2026-10-25,Active,application,Operations
+Neha Singh,neha.singh,ChangeMe@321,neha.singh@rblbank.com,EMP1004,M2,Auditor,Joel B,2026-10-25,Active,audit,Internal Audit
